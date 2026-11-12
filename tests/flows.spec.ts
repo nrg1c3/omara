@@ -248,3 +248,28 @@ test('الشقق: لينك واتساب فيه رقم الساكن', async ({ pa
   expect(href).toContain('https://wa.me/201001234567?text=');
   expect(decodeURIComponent(href!)).toContain(`#c=${ADMIN_VIEW.units[0].pay_code}`);
 });
+
+test('صفحة "إيه هو عمارتنا" من شاشة الدخول', async ({ page }) => {
+  const errors = collectErrors(page);
+  await mockApi(page);
+  await page.goto('./');
+  await page.getByRole('link', { name: 'إيه هو عمارتنا؟' }).click();
+  await expect(page).toHaveURL(/#about$/);
+  await expectNoHorizontalScroll(page);
+  await expectTapTargets(page);
+  await page.getByRole('link', { name: 'سجّل عمارتك' }).first().click();
+  await expect(page).toHaveURL(/#register$/);
+  expect(errors).toEqual([]);
+});
+
+test('خطوات تجهيز العمارة بتظهر وبتختفي', async ({ page }) => {
+  await asAdmin(page);
+  await page.goto('./#a/home');
+  await expect(page.getByText('جهّز العمارة')).toBeVisible();
+  await expect(page.getByText('خلصت: اكتب بيانات التحويل')).toBeAttached();
+  await page.getByRole('button', { name: 'اخفي الخطوات دي' }).click();
+  await expect(page.getByText('جهّز العمارة')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByTestId('collected')).toBeVisible();
+  await expect(page.getByText('جهّز العمارة')).toHaveCount(0);
+});

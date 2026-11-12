@@ -21,6 +21,7 @@ export type Route =
   | { name: 'guard' }
   | { name: 'nrg' }
   | { name: 'register' }
+  | { name: 'about' }
   | { name: 'resident'; tab: ResidentTab; sub?: string }
   | { name: 'admin'; tab: AdminTab; sub?: string };
 
@@ -33,6 +34,7 @@ export function parseHash(hash: string): Route {
   if (h === 'guard') return { name: 'guard' };
   if (h === 'nrg') return { name: 'nrg' };
   if (h === 'register') return { name: 'register' };
+  if (h === 'about') return { name: 'about' };
   const [area, tab, ...rest] = h.split('/');
   const sub = rest.length ? rest.join('/') : undefined;
   if (area === 'r') {
@@ -55,6 +57,7 @@ export function routeToHash(r: Route): string {
     case 'guard':
     case 'nrg':
     case 'register':
+    case 'about':
       return `#${r.name}`;
     case 'resident':
       return `#r/${r.tab}${r.sub ? `/${r.sub}` : ''}`;

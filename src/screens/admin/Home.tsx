@@ -16,6 +16,7 @@ import { useAction } from '../../lib/useAction';
 import { amountError, amountValue } from '../../lib/validate';
 import { buildingName } from '../../lib/view';
 import { refreshView, useAppState } from '../../store';
+import { SetupChecklist } from './Setup';
 
 export function isPendingClaim(c: Claim): boolean {
   return !c.status || /مستني|جديد|pending/i.test(String(c.status));
@@ -53,6 +54,8 @@ export function AdminHome() {
           {formatNumber(f.paid_units)} شقة دفعت من {formatNumber(f.total_units)} · رصيد الصندوق {formatMoney(f.balance)}
         </span>
       </Card>
+
+      <SetupChecklist />
 
       <div class="grid-2">
         <a class="tile" href="#a/record">

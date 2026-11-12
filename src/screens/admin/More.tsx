@@ -11,6 +11,7 @@ import { Badge, Empty, MenuLink, PageHeader, Row } from '../../components/Page';
 import { ShareBox } from '../../components/ShareBox';
 import { toast } from '../../components/Toast';
 import { useInstall } from '../../lib/app';
+import { readJSON, writeJSON } from '../../lib/storage';
 import { onlyDigits } from '../../lib/digits';
 import { currentMonth, formatMoney, formatMonth, formatNumber, today, formatDate } from '../../lib/format';
 import { useAction } from '../../lib/useAction';
@@ -573,6 +574,11 @@ function Guards() {
             </Row>
           ))}
         </div>
+      )}
+      {(y?.guards ?? []).length === 0 && v && !readJSON<boolean>(`setup.noguard.${v.building.id}`) && (
+        <Button variant="ghost" onClick={() => { writeJSON(`setup.noguard.${v.building.id}`, true); toast('تمام، مفيش بواب'); }}>
+          العمارة مفيهاش بواب
+        </Button>
       )}
       <Card title="حساب جديد">
         <Field label="الاسم" value={name} onInput={setName} error={err} />

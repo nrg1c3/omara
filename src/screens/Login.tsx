@@ -168,6 +168,10 @@ export function Login({ initialMode = 'resident', initialCode = '', initialError
           <Icon name="plus" size={20} />
           <span>سجّل عمارتك</span>
         </a>
+        <a class="btn btn--ghost btn--block" href="#about">
+          <Icon name="building" size={20} />
+          <span>إيه هو عمارتنا؟</span>
+        </a>
         <a class="btn btn--ghost btn--block" href="#guard">
           <Icon name="shield" size={20} />
           <span>دخول الأمن</span>
