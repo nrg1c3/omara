@@ -65,7 +65,7 @@ function Polls() {
   const polls = x?.polls ?? [];
   return (
     <>
-      <PageHeader title="التصويت" back="#r/more" subtitle="صوت واحد لكل شقة، ومينفعش يتغيّر بعد ما تصوّت." />
+      <PageHeader title="التصويت" back="#r/more" subtitle="صوت واحد لكل شقة ومينفعش يتغيّر. النتيجة استرشادية ومش محضر جمعية عمومية رسمي." />
       <ErrorMessage error={err} />
       {!x ? <CardSkeleton /> : polls.length === 0 ? <Empty icon="vote">مفيش تصويت دلوقتي.</Empty> : polls.map((p) => <PollCard key={p.no} poll={p} canVote />)}
     </>
@@ -225,6 +225,9 @@ function chatSessionId(): string {
 
 const SUGGESTIONS = ['عليا كام؟', 'أدفع إزاي بإنستاباي؟', 'الفلوس اتصرفت على إيه الشهر ده؟'];
 
+/** المساعد بيعرف الساكن من كود الدفع في الرسالة (بيفتكره 3 ساعات لكل sessionId)، فبنبعته مع أول رسالة بعد كل فتح للصفحة */
+let codeSentThisLoad = false;
+
 function Assistant() {
   const { resident: v } = useAppState();
   const [msgs, setMsgs] = useState<Msg[]>(() => readJSON<Msg[]>('chat.msgs') ?? []);
@@ -246,9 +249,9 @@ function Assistant() {
     setMsgs((m) => [...m, { me: true, text: t }]);
     setBusy(true);
     try {
-      // بنبعت سياق بسيط (العمارة والشقة) عشان المساعد يرد صح
-      const ctx = v ? `[عمارة ${v.building.id}، شقة ${v.unit.unit}] ` : '';
-      const out = await chat(chatSessionId(), ctx + t);
+      const prefix = v && !codeSentThisLoad ? `كود الدفع بتاعي ${v.pay_code}. ` : '';
+      const out = await chat(chatSessionId(), prefix + t);
+      codeSentThisLoad = true;
       setMsgs((m) => [...m, { me: false, text: out }]);
     } catch (e) {
       setErr((e as Error).message);
@@ -259,8 +262,27 @@ function Assistant() {
 
   return (
     <>
-      <PageHeader title="المساعد" back="#r/more" subtitle="اسأل عن حسابك أو مصاريف العمارة أو إزاي تعمل أي حاجة." />
+      <PageHeader
+        title="المساعد"
+        back="#r/more"
+        action={
+          msgs.length > 0 ? (
+            <Button
+              variant="ghost"
+              icon="refresh"
+              onClick={() => {
+                writeJSON('chat.session', null);
+                codeSentThisLoad = false;
+                setMsgs([]);
+              }}
+            >
+              محادثة جديدة
+            </Button>
+          ) : undefined
+        }
+      />
       <div class="chat" aria-live="polite">
+        <div class="bubble bubble--bot">أهلاً{v?.unit.owner_name ? ` يا ${v.unit.owner_name}` : ''}. اسألني عن حسابك أو مصاريف العمارة، أو قولي عايز صنايعي أو عندك عطل.</div>
         {msgs.length === 0 && (
           <div class="choice__row">
             {SUGGESTIONS.map((s) => (

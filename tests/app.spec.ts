@@ -52,8 +52,7 @@ test.describe('سيناريو 1: دخول الساكن', () => {
     const sent = await mockApi(page);
     await page.goto('./');
     await page.getByLabel('كود الدفع').fill('٤٨٢٧١٩٣٠');
-    await expect(page.getByLabel('كود الدفع')).toHaveValue('48271930');
-    await page.getByRole('button', { name: 'ادخل' }).click();
+    // الكود الكامل بيدخل لوحده من غير ضغط
     await expect(page).toHaveURL(/#r\/home$/);
     await expect(page.getByTestId('balance-due')).toHaveText('350 ج.م');
     await expect(page.getByText('18,450 ج.م')).toBeVisible();

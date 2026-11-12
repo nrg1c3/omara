@@ -28,7 +28,8 @@ export type Route =
 export function parseHash(hash: string): Route {
   const h = decodeURIComponent(hash.replace(/^#\/?/, '')).trim();
   if (!h || h === 'login') return { name: 'login' };
-  if (h === 'login/admin') return { name: 'login', mode: 'admin' };
+  if (h === 'login/admin' || h === 'admin') return { name: 'login', mode: 'admin' };
+  if (/^(guard|nrg)&/.test(h)) return { name: h.startsWith('guard') ? 'guard' : 'nrg' };
   const code = /^c=(.+)$/.exec(h);
   if (code) return { name: 'code', code: code[1] };
   if (h === 'guard') return { name: 'guard' };

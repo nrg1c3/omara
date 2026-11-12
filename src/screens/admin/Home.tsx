@@ -5,7 +5,7 @@ import { Card } from '../../components/Card';
 import { Field } from '../../components/Field';
 import { Icon } from '../../components/Icon';
 import { CardSkeleton } from '../../components/Loading';
-import { ErrorMessage } from '../../components/Messages';
+import { Alert, ErrorMessage } from '../../components/Messages';
 import { Badge, Empty, Row } from '../../components/Page';
 import { ReceiptButton } from '../../components/Receipt';
 import { ShareBox } from '../../components/ShareBox';
@@ -17,14 +17,13 @@ import { amountError, amountValue } from '../../lib/validate';
 import { buildingName } from '../../lib/view';
 import { refreshView, useAppState } from '../../store';
 import { SetupChecklist } from './Setup';
+import { isPendingClaim } from '../../lib/claims';
 
-export function isPendingClaim(c: Claim): boolean {
-  return !c.status || /مستني|جديد|pending/i.test(String(c.status));
-}
 
 export function AdminHome() {
   const { admin: v } = useAppState();
   const [showGroup, setShowGroup] = useState(false);
+  const [lastReceipt, setLastReceipt] = useState<{ text: string; wa: string } | null>(null);
   if (!v) return <CardSkeleton lines={3} />;
   const f = v.fund;
   const pending = v.claims.filter(isPendingClaim);
@@ -72,12 +71,30 @@ export function AdminHome() {
         <span>تحويلات مستنية موافقتك</span>
         {pending.length > 0 && <Badge tone="warn">{formatNumber(pending.length)}</Badge>}
       </h2>
+      {lastReceipt && (
+        <Card>
+          <Alert tone="success">التحويل اتقبل واتسجّل.</Alert>
+          {lastReceipt.wa ? (
+            <>
+              <div class="pre">{lastReceipt.text}</div>
+              <a class="btn btn--primary btn--block" href={lastReceipt.wa} target="_blank" rel="noopener">
+                ابعت الإيصال للساكن
+              </a>
+            </>
+          ) : (
+            <ShareBox text={lastReceipt.text} title="ابعت الإيصال للساكن" />
+          )}
+          <Button variant="ghost" onClick={() => setLastReceipt(null)}>
+            تمام
+          </Button>
+        </Card>
+      )}
       {pending.length === 0 ? (
         <Empty icon="check">مفيش تحويلات مستنية.</Empty>
       ) : (
         <div class="list">
           {pending.map((c) => (
-            <ClaimRow key={String(c.id)} c={c} />
+            <ClaimRow key={String(c.id)} c={c} onAccepted={(r) => r.text && setLastReceipt(r)} />
           ))}
         </div>
       )}
@@ -124,7 +141,7 @@ export function AdminHome() {
   );
 }
 
-function ClaimRow({ c }: { c: Claim }) {
+function ClaimRow({ c, onAccepted }: { c: Claim; onAccepted: (r: { text: string; wa: string }) => void }) {
   const [amount, setAmount] = useState(String(c.amount ?? ''));
   const [note, setNote] = useState('');
   const [err, setErr] = useState<string | null>(null);
@@ -143,13 +160,14 @@ function ClaimRow({ c }: { c: Claim }) {
     setErr(null);
     const ok = await act.run(() => call('a_claim', { id: c.id, decision, note: note.trim(), ...(decision === 'accept' ? { amount: amountValue(amount) } : {}) }));
     if (ok) {
+      if (decision === 'accept') onAccepted({ text: ok.receipt_text ?? '', wa: ok.wa ?? '' });
       toast(decision === 'accept' ? 'اتقبل واتسجّل' : 'اترفض');
       refreshView().catch(() => {});
     }
   };
 
   return (
-    <Row title={`شقة ${c.unit ?? ''} · ${c.label || c.month || ''}`} meta={[c.method, formatDate(c.paid_on), c.reference || c.ref ? `رقم العملية ${c.reference || c.ref}` : ''].filter(Boolean).join(' · ')} value={c.amount !== undefined ? formatMoney(c.amount) : undefined}>
+    <Row title={`شقة ${c.unit ?? ''} · ${c.month_label || c.month || ''}`} meta={[c.method, formatDate(c.paid_on), c.reference ? `رقم العملية ${c.reference}` : ''].filter(Boolean).join(' · ')} value={c.amount !== undefined ? formatMoney(c.amount) : undefined}>
       {aiDiff && (
         <span class="badge badge--warn" style={{ alignSelf: 'flex-start' }}>
           <Icon name="alert" size={16} /> الإيصال مكتوب فيه {formatMoney(Number(c.ai_amount))}
@@ -163,6 +181,11 @@ function ClaimRow({ c }: { c: Claim }) {
       )}
       <Field label="المبلغ اللي هيتسجّل" kind="amount" value={amount} onInput={setAmount} />
       <Field label="ملاحظة (مطلوبة لو هترفض)" value={note} onInput={setNote} />
+      {!note && (
+        <button type="button" class="choice__item" style={{ alignSelf: 'flex-start' }} onClick={() => setNote('المبلغ مش واصل لحساب العمارة')}>
+          المبلغ مش واصل لحساب العمارة
+        </button>
+      )}
       <ErrorMessage error={err || act.error} />
       <div class="list-row__actions">
         <Button loading={act.busy} icon="check" onClick={() => decide('accept')}>

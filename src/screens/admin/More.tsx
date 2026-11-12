@@ -165,7 +165,7 @@ function PollsAdmin() {
 
   return (
     <>
-      <PageHeader title="التصويت" back="#a/more" subtitle="صوت واحد لكل شقة. التصويت بينزل إعلان للسكان لوحده." />
+      <PageHeader title="التصويت" back="#a/more" subtitle="صوت واحد لكل شقة، والتصويت بينزل إعلان للسكان لوحده. النتيجة استرشادية ومش محضر جمعية عمومية رسمي." />
       {groupText && (
         <Card>
           <Alert tone="success">تمام. ابعت الرسالة دي لجروب العمارة.</Alert>
@@ -298,7 +298,7 @@ function PlansAdmin() {
     if (hasErrors(e)) return;
     const r = await act.run(() => call('y_plan_add', { unit: d.unit, months, start_month: d.start_month, ...(d.total.trim() ? { total: amountValue(d.total) } : {}), note: d.note.trim() }));
     if (r) {
-      setShare({ text: r.share_text, phone: v?.units.find((u) => u.unit === d.unit)?.phone });
+      setShare({ text: r.share_text, phone: r.phone || v?.units.find((u) => u.unit === d.unit)?.phone });
       setD({ unit: '', months: '6', start_month: currentMonth(), total: '', note: '' });
       refreshY().catch(() => {});
     }
@@ -498,13 +498,17 @@ function ReportPage() {
               <h3 class="section-title">المصاريف</h3>
               <div class="list">
                 {r.expenses.map((e, i) => (
-                  <Row key={i} title={`#${e.no ?? ''} ${e.item}`} meta={[e.category, e.vendor, formatDate(e.date), e.has_receipt ? 'بإيصال' : 'من غير إيصال'].filter(Boolean).join(' · ')} value={formatMoney(e.amount)} />
+                  <Row key={i} title={`#${e.no ?? ''} ${e.item}`} meta={[e.category, e.vendor, formatDate(e.date), e.has_receipt || e.receipt ? 'بإيصال' : 'من غير إيصال'].filter(Boolean).join(' · ')} value={formatMoney(e.amount)} />
                 ))}
               </div>
             </section>
           )}
           <p class="muted">اتعمل من تطبيق عمارتنا يوم {formatDate(today())}.</p>
-          <div class="no-print">
+          <div class="no-print stack">
+            <ShareBox
+              title="ملخص للواتساب"
+              text={`كشف حساب ${buildingName(v?.building)}\nمن ${formatMonth(range.from)} لحد ${formatMonth(range.to)}\nرصيد أول المدة: ${formatMoney(r.opening_balance)}\nالمحصّل: ${formatMoney(r.income)}\nالمصروف: ${formatMoney(r.expense)}\nرصيد آخر المدة: ${formatMoney(r.closing_balance)}\nمصروفات بإيصالات: ${formatNumber(r.receipts_pct)}%\nالتفاصيل في التطبيق: ${v?.app_url ?? ''}`.replace(/[\u2066\u2069]/g, '')}
+            />
             <Button block icon="print" onClick={() => window.print()}>
               اطبع أو احفظ PDF
             </Button>

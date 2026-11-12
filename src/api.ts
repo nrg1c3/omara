@@ -87,20 +87,20 @@ export interface Payment extends Loose {
   by?: string;
 }
 
-/** مطالبة (تحويل رفعه الساكن ومستني موافقة). الشكل الكامل ما ظهرش في TEST14 لسه. */
+/** مطالبة (تحويل رفعه الساكن). status: 'قيد المراجعة' | 'اتقبل' | 'اترفض' */
 export interface Claim extends Loose {
   id: number | string;
+  no?: string;
   unit?: string;
   amount?: number;
-  ai_amount?: number;
+  ai_amount?: number | null;
   month?: YearMonth;
-  label?: string;
+  month_label?: string;
   method?: string;
   paid_on?: ISODate;
   reference?: string;
-  ref?: string;
   status?: string;
-  note?: string;
+  review_note?: string;
   ai_note?: string;
   receipt_id?: string;
   date?: string;
@@ -241,14 +241,14 @@ export interface Poll extends Loose {
   voters?: string[];
 }
 
+/** status: 'ساري' | 'دخل' (الملغي ما بيرجعش) */
 export interface Visitor extends Loose {
-  code?: string;
-  visitor_name?: string;
-  visit_date?: ISODate;
+  code: string;
+  name: string;
+  date: ISODate;
   note?: string;
   unit?: string;
   status?: string;
-  entered_at?: string;
 }
 
 export interface MaintenanceTask extends Loose {
@@ -430,7 +430,7 @@ export interface Actions {
     },
     Loose
   >;
-  a_claim: Def<'api', { id: string | number; decision: 'accept' | 'reject'; note?: string; amount?: number }, Loose>;
+  a_claim: Def<'api', { id: string | number; decision: 'accept' | 'reject'; note?: string; amount?: number }, { message?: string; receipt_text?: string; wa?: string } & Loose>;
   a_ticket: Def<'api', { id: string | number; status: TicketStatus; resolution?: string }, Loose>;
   a_service: Def<'api', { id: string | number; status: ServiceStatus; price?: number }, Loose>;
   a_notice: Def<'api', { title: string; body: string }, Loose>;
@@ -451,7 +451,7 @@ export interface Actions {
 
   // ---- omara-y ----
   y_view: Def<'y', None, YView & Loose>;
-  y_plan_add: Def<'y', { unit: string; months: number; start_month: YearMonth; total?: number; note?: string }, { share_text: string } & Loose>;
+  y_plan_add: Def<'y', { unit: string; months: number; start_month: YearMonth; total?: number; note?: string }, { share_text: string; phone?: string } & Loose>;
   y_plan_cancel: Def<'y', { plan_no: string }, Loose>;
   y_budget_set: Def<'y', { category: string; monthly: number }, Loose>;
   y_report: Def<'y', { from: YearMonth; to: YearMonth }, Report>;

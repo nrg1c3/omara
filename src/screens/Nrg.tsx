@@ -5,7 +5,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { CardSkeleton } from '../components/Loading';
 import { ErrorMessage } from '../components/Messages';
-import { Empty, PageHeader, Row } from '../components/Page';
+import { Badge, Empty, PageHeader, Row } from '../components/Page';
 import { formatNumber } from '../lib/format';
 import { useAction } from '../lib/useAction';
 import { logout, startSession, useAppState } from '../store';
@@ -74,12 +74,22 @@ const LABELS: Record<string, string> = {
   subscription: 'الاشتراك المتوقع',
   created: 'تاريخ التسجيل',
   treasurer_name: 'أمين الصندوق',
+  treasurer: 'أمين الصندوق',
+  phone: 'الموبايل',
+  monthly_due: 'المستحق في الشهر',
+  rate: 'نسبة التحصيل %',
+  since: 'من يوم',
+  active: 'شغالة',
+  buildings: 'العماير',
+  subscription_estimate: 'الاشتراك المتوقع (تقدير)',
+  month: 'الشهر',
   treasurer_phone: 'الموبايل'
 };
 
 type Obj = Record<string, unknown>;
 
 function fmt(v: unknown): string {
+  if (typeof v === 'boolean') return v ? 'أيوه' : 'لأ';
   if (typeof v === 'number') return formatNumber(v);
   if (Array.isArray(v)) return formatNumber(v.length);
   if (v && typeof v === 'object') return '';
@@ -99,13 +109,13 @@ function NrgDashboard() {
   }, []);
 
   const list = data ? ((Object.values(data).find((v) => Array.isArray(v) && v.length && typeof v[0] === 'object') as Obj[] | undefined) ?? []) : [];
-  const totals = data ? Object.entries(data).filter(([k, v]) => k !== 'ok' && (typeof v === 'number' || (v && typeof v === 'object' && !Array.isArray(v)))) : [];
+  const totals = data ? Object.entries(data).filter(([k, v]) => k !== 'ok' && k !== 'month' && (typeof v === 'number' || (v && typeof v === 'object' && !Array.isArray(v)))) : [];
 
   return (
     <main class="screen">
       <PageHeader
         title="لوحة NRG"
-        subtitle={data ? `${formatNumber(list.length)} عمارة` : undefined}
+        subtitle={data ? `${formatNumber(list.length)} عمارة${typeof data.month === 'string' ? ` · ${data.month}` : ''}` : undefined}
         action={
           <Button variant="ghost" icon="logout" onClick={() => logout()}>
             خروج
@@ -136,9 +146,10 @@ function NrgDashboard() {
           {list.map((b, i) => {
             const title = String(b.name ?? b.building_name ?? b.id ?? `عمارة ${i + 1}`);
             const entries = Object.entries(b).filter(([k, v]) => !['name', 'building_name'].includes(k) && v !== '' && v !== null && typeof v !== 'object');
+            const inactive = b.active === false;
             const arrays = Object.entries(b).filter(([, v]) => Array.isArray(v));
             return (
-              <Row key={i} title={title}>
+              <Row key={i} title={title} badge={inactive ? <Badge tone="neutral">مش شغالة</Badge> : undefined}>
                 <dl class="stack" style={{ gap: 0, margin: 0 }}>
                   {[...entries, ...arrays].map(([k, v]) => (
                     <div class="kv" key={k}>

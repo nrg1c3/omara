@@ -37,7 +37,7 @@ export const ADMIN_VIEW = {
   admin_name: 'أمين تجربة',
   building, fund, ledger, tickets, services: [], notices: [],
   payments: [],
-  claims: [{ id: 7, unit: '3', amount: 350, ai_amount: 350, month: '2026-11', label: 'نوفمبر 2026', method: 'إنستاباي', paid_on: '2026-11-05', reference: '123456', receipt_id: 'R1', status: 'مستني' }],
+  claims: [{ id: 7, no: 'C1', unit: '3', amount: 350, ai_amount: 400, ai_note: '', month: '2026-11', month_label: 'نوفمبر 2026', method: 'إنستاباي', paid_on: '2026-11-05', reference: '123456', receipt_id: 'R1', status: 'قيد المراجعة', review_note: '', date: '2026-11-05' }],
   late: [{ unit: '18', owner_name: 'ساكن 18', phone: '', amount: 1050, months: 3, months_text: 'سبتمبر، أكتوبر، نوفمبر', text: 'تذكير ودي', wa: '' }],
   units: [
     { id: 1, unit: '3', owner_name: 'ساكن 3', phone: '01001234567', monthly_fee: 350, pay_code: '19386427', balance_due: 700, credit: 0, unpaid: [{ month: '2026-10', label: 'أكتوبر 2026', remaining: 350 }] },

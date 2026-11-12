@@ -256,15 +256,15 @@ function Visitors() {
       ) : (
         <div class="list">
           {list.map((vis) => (
-            <Row key={vis.code} title={vis.visitor_name} meta={[formatDate(vis.visit_date), vis.note].filter(Boolean).join(' · ')} badge={vis.status ? <Badge tone={ticketTone(vis.status)}>{vis.status}</Badge> : undefined} value={<span class="ltr">{vis.code}</span>}>
-              {vis.code && !/دخل|اتلغى|انتهى/.test(String(vis.status ?? '')) && (
+            <Row key={vis.code} title={vis.name} meta={[formatDate(vis.date), vis.note].filter(Boolean).join(' · ')} badge={vis.status ? <Badge tone={ticketTone(vis.status)}>{vis.status}</Badge> : undefined} value={<span class="ltr">{vis.code}</span>}>
+              {vis.code && (!vis.status || vis.status === 'ساري') && (
                 <div class="list-row__actions">
                   <Button
                     variant="secondary"
                     icon="close"
                     loading={act.busy}
                     onClick={() => {
-                      if (confirm(`تلغي تصريح ${vis.visitor_name ?? ''}؟`)) act.run(() => call('x_visitor_cancel', { code: vis.code! }).then(() => refreshX()));
+                      if (confirm(`تلغي تصريح ${vis.name ?? ''}؟`)) act.run(() => call('x_visitor_cancel', { code: vis.code }).then(() => refreshX()));
                     }}
                   >
                     الغي التصريح

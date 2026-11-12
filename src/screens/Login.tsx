@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Field } from '../components/Field';
@@ -36,12 +36,13 @@ export function validatePin(pin: string): string | null {
 export function Login({ initialMode = 'resident', initialCode = '', initialError = null }: { initialMode?: Mode; initialCode?: string; initialError?: string | null }) {
   const { loginNotice } = useAppState();
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [code, setCode] = useState(initialCode);
+  const [codeState, setCode] = useState(initialCode);
   const [building, setBuilding] = useState('');
   const [pin, setPin] = useState('');
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [serverError, setServerError] = useState<string | null>(initialError);
   const [busy, setBusy] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const switchMode = (m: Mode) => {
     setMode(m);
@@ -49,9 +50,10 @@ export function Login({ initialMode = 'resident', initialCode = '', initialError
     setServerError(null);
   };
 
-  const submit = async (e: JSX.TargetedEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const submit = async (e?: JSX.TargetedEvent<HTMLFormElement>, codeOverride?: string) => {
+    e?.preventDefault();
     if (busy) return;
+    const code = codeOverride ?? codeState;
     setServerError(null);
     setState({ loginNotice: null });
     if (mode === 'resident') {
@@ -107,7 +109,7 @@ export function Login({ initialMode = 'resident', initialCode = '', initialError
       {loginNotice && <Alert tone="warn">{loginNotice}</Alert>}
 
       <Card>
-        <form class="stack" style={{ gap: '16px' }} onSubmit={submit} noValidate>
+        <form ref={formRef} class="stack" style={{ gap: '16px' }} onSubmit={(e) => submit(e)} noValidate>
           {mode === 'resident' ? (
             <Field
               key="code"
@@ -115,10 +117,12 @@ export function Login({ initialMode = 'resident', initialCode = '', initialError
               hint="8 أرقام، مكتوب على كارت الشقة."
               kind="digits"
               maxLength={CODE_LEN}
-              value={code}
+              value={codeState}
               onInput={(v) => {
                 setCode(v);
                 if (errors.code) setErrors({ code: null });
+                // الكود كامل ← ادخل على طول (زي النسخة القديمة)
+                if (v.length === CODE_LEN && v !== codeState && !initialError) submit(undefined, v);
               }}
               error={errors.code}
               autoComplete="one-time-code"

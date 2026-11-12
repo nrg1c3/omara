@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { call, type Visitor } from '../api';
 import { Button } from '../components/Button';
+import { toast } from '../components/Toast';
 import { Card } from '../components/Card';
 import { Field } from '../components/Field';
 import { Icon } from '../components/Icon';
@@ -75,7 +76,7 @@ function beep() {
   }
 }
 
-const key = (v: Visitor) => String(v.code ?? `${v.visitor_name}-${v.visit_date}`);
+const key = (v: Visitor) => String(v.code || `${v.name}-${v.date}`);
 
 function GuardHome() {
   const [visitors, setVisitors] = useState<Visitor[]>(() => loadCachedView<Visitor[]>('guard')?.data ?? []);
@@ -94,6 +95,7 @@ function GuardHome() {
       const fresh = list.filter((v) => !seen.current.has(key(v)));
       if (fresh.length && seen.current.size > 0) {
         beep();
+        toast(fresh.length === 1 ? `زائر جديد: ${fresh[0].name}` : `${fresh.length} زوار جداد`);
         setNewCount((n) => n + fresh.length);
       }
       list.forEach((v) => seen.current.add(key(v)));
@@ -107,8 +109,15 @@ function GuardHome() {
 
   useEffect(() => {
     load();
-    const t = window.setInterval(load, GUARD_POLL_MS);
-    return () => window.clearInterval(t);
+    const t = window.setInterval(() => {
+      if (document.visibilityState === 'visible') load();
+    }, GUARD_POLL_MS);
+    const onVis = () => document.visibilityState === 'visible' && load();
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   const check = async (e: JSX.TargetedEvent<HTMLFormElement>) => {
@@ -131,8 +140,8 @@ function GuardHome() {
   };
 
   const t = today();
-  const todays = visitors.filter((v) => !v.visit_date || v.visit_date === t);
-  const later = visitors.filter((v) => v.visit_date && v.visit_date > t);
+  const todays = visitors.filter((v) => !v.date || v.date === t);
+  const later = visitors.filter((v) => v.date && v.date > t);
 
   return (
     <main class="screen">
@@ -182,7 +191,7 @@ function VisitorList({ list }: { list: Visitor[] }) {
   return (
     <div class="list">
       {list.map((v) => (
-        <Row key={key(v)} title={v.visitor_name || 'زائر'} meta={[v.unit ? `شقة ${v.unit}` : '', formatDate(v.visit_date), v.note].filter(Boolean).join(' · ')} badge={v.status ? <Badge tone={/دخل/.test(v.status) ? 'success' : 'neutral'}>{v.status}</Badge> : undefined} />
+        <Row key={key(v)} title={v.name || 'زائر'} meta={[v.unit ? `شقة ${v.unit}` : '', formatDate(v.date), v.note].filter(Boolean).join(' · ')} badge={v.status ? <Badge tone={/دخل/.test(v.status) ? 'success' : 'neutral'}>{v.status}</Badge> : undefined} />
       ))}
     </div>
   );

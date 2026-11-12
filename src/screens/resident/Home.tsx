@@ -5,6 +5,7 @@ import { CardSkeleton } from '../../components/Loading';
 import { formatMoney, formatNumber, formatDate } from '../../lib/format';
 import { buildingName } from '../../lib/view';
 import { refreshX, refreshY, useAppState } from '../../store';
+import { isPendingClaim } from '../../lib/claims';
 
 export function Home() {
   const { resident: v, x, y } = useAppState();
@@ -27,7 +28,7 @@ export function Home() {
   const fund = v.fund;
   const openPolls = (x?.polls ?? []).filter((p) => !p.closed && !p.my_choice).length;
   const plan = (y?.plans ?? []).find((p) => p.left > 0);
-  const pendingClaims = (v.claims ?? []).filter((c) => !c.status || /مستني|جديد|pending/i.test(String(c.status))).length;
+  const pendingClaims = (v.claims ?? []).filter(isPendingClaim).length;
   const lastNotice = v.notices?.[0];
 
   return (

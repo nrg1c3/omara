@@ -9,11 +9,14 @@ import { CardSkeleton } from '../../components/Loading';
 import { Alert, ErrorMessage } from '../../components/Messages';
 import { Badge, Empty, PageHeader, Row } from '../../components/Page';
 import { ReceiptButton, ReceiptPicker } from '../../components/Receipt';
-import { formatMoney, formatNumber, today, formatDate } from '../../lib/format';
+import { currentMonth, formatMonth, formatMoney, formatNumber, today, formatDate } from '../../lib/format';
 import { useAction } from '../../lib/useAction';
 import { amountError, amountValue, hasErrors, req } from '../../lib/validate';
 import { navigate } from '../../router';
 import { refreshView, useAppState } from '../../store';
+import { claimTone } from '../../lib/claims';
+import { copyText } from '../../lib/share';
+import { toast } from '../../components/Toast';
 
 /** طرق التحويل (الكاش بيتسجل عند أمين الصندوق، مش من هنا) */
 export const TRANSFER_METHODS = ['إنستاباي', 'تحويل بنكي', 'محفظة موبايل'];
@@ -23,13 +26,6 @@ export function Pay({ sub }: { sub?: string }) {
   return <PayHome />;
 }
 
-function claimTone(status?: string): 'warn' | 'success' | 'danger' | 'neutral' {
-  const s = String(status ?? '');
-  if (/اتقبل|مقبول|accept/i.test(s)) return 'success';
-  if (/اترفض|مرفوض|reject/i.test(s)) return 'danger';
-  if (!s || /مستني|جديد|pending/i.test(s)) return 'warn';
-  return 'neutral';
-}
 
 function PayHome() {
   const { resident: v } = useAppState();
@@ -51,7 +47,16 @@ function PayHome() {
       <Card title="ادفع إزاي؟">
         <div class="stack" style={{ gap: '6px' }}>
           <strong>1. تحويل (إنستاباي أو بنك أو محفظة)</strong>
-          {b.payment_info ? <div class="pre">{b.payment_info}</div> : <p class="muted">أمين الصندوق لسه ما كتبش بيانات التحويل. اسأله عليها.</p>}
+          {b.payment_info ? (
+            <>
+              <div class="pre">{b.payment_info}</div>
+              <Button variant="secondary" icon="copy" onClick={async () => toast((await copyText(b.payment_info!)) ? 'اتنسخ' : 'ما اتنسخش، انسخه بإيدك')}>
+                انسخ بيانات التحويل
+              </Button>
+            </>
+          ) : (
+            <p class="muted">أمين الصندوق لسه ما كتبش بيانات التحويل. اسأله عليها.</p>
+          )}
           <span class="muted">بعد ما تحوّل، صوّر الإيصال وابعته من هنا.</span>
         </div>
         <div class="stack" style={{ gap: '6px' }}>
@@ -80,8 +85,8 @@ function PayHome() {
           <h2 class="section-title">التحويلات اللي بعتها</h2>
           <div class="list">
             {v.claims.map((c) => (
-              <Row key={String(c.id)} title={c.label || c.month || 'تحويل'} meta={[c.method, formatDate(c.paid_on || c.date)].filter(Boolean).join(' · ')} value={c.amount !== undefined ? formatMoney(c.amount) : undefined} badge={<Badge tone={claimTone(c.status)}>{c.status || 'مستني المراجعة'}</Badge>}>
-                {c.note && <span class="muted">{c.note}</span>}
+              <Row key={String(c.id)} title={c.month_label || c.month || 'تحويل'} meta={[c.method, formatDate(c.paid_on || c.date)].filter(Boolean).join(' · ')} value={c.amount !== undefined ? formatMoney(c.amount) : undefined} badge={<Badge tone={claimTone(c.status)}>{c.status || 'قيد المراجعة'}</Badge>}>
+                {c.review_note && <span class="muted">ملاحظة أمين الصندوق: {c.review_note}</span>}
               </Row>
             ))}
           </div>
@@ -117,7 +122,9 @@ function ClaimForm() {
   const act = useAction();
 
   if (!v) return <CardSkeleton />;
-  const monthOptions = [...v.account.unpaid, ...v.account.months]
+  const now = new Date();
+  const extra = [currentMonth(now), currentMonth(new Date(now.getFullYear(), now.getMonth() + 1, 1))].map((m) => ({ month: m, label: formatMonth(m), remaining: 0 }));
+  const monthOptions = [...v.account.unpaid, ...v.account.months, ...extra]
     .filter((m, i, arr) => arr.findIndex((x) => x.month === m.month) === i)
     .map((m) => ({ value: m.month, label: `${m.label}${m.remaining > 0 ? ` (باقي ${formatNumber(m.remaining)})` : ''}` }));
 
@@ -147,7 +154,7 @@ function ClaimForm() {
   const submit = async () => {
     const e = {
       receipt: reading ? null : 'ارفع صورة إيصال التحويل الأول.',
-      amount: amountError(f.amount),
+      amount: amountError(f.amount) || (amountValue(f.amount) > 100000 ? 'المبلغ كبير قوي. راجعه.' : null),
       month: req(f.month, 'اختار الشهر اللي بتدفعه.'),
       method: req(f.method, 'اختار طريقة التحويل.'),
       paid_on: req(f.paid_on, 'اختار يوم التحويل.'),

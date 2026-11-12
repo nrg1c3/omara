@@ -53,7 +53,7 @@ export function ReceiptPicker({
     return (
       <div class="card" aria-live="polite">
         {preview && <img class="thumb" src={preview} alt="صورة الإيصال" />}
-        <Loading text={busy === 'compress' ? 'بنجهّز الصورة...' : 'بنقرا الإيصال... ممكن ياخد دقيقة'} />
+        <Loading text={busy === 'compress' ? 'بنجهّز الصورة...' : kind === 'ticket' ? 'بنرفع الصورة...' : 'بنقرا الإيصال... ممكن ياخد دقيقة'} />
       </div>
     );
   }
@@ -62,10 +62,17 @@ export function ReceiptPicker({
     return (
       <div class="card">
         <img class="thumb" src={preview} alt="صورة الإيصال" />
-        <div class={`alert ${reading.read_ok ? 'alert--success' : 'alert--warn'}`} role="status">
-          <Icon name={reading.read_ok ? 'check' : 'alert'} size={20} />
-          <span>{reading.read_ok ? 'قرينا الإيصال. راجع البيانات تحت وصلّحها لو في حاجة غلط.' : 'ما قدرناش نقرا الإيصال كويس. اكتب البيانات بإيدك.'}</span>
-        </div>
+        {kind === 'ticket' ? (
+          <div class="alert alert--success" role="status">
+            <Icon name="check" size={20} />
+            <span>الصورة اترفعت.</span>
+          </div>
+        ) : (
+          <div class={`alert ${reading.read_ok ? 'alert--success' : 'alert--warn'}`} role="status">
+            <Icon name={reading.read_ok ? 'check' : 'alert'} size={20} />
+            <span>{reading.read_ok ? 'قرينا الإيصال. راجع البيانات تحت وصلّحها لو في حاجة غلط.' : 'ما قدرناش نقرا الإيصال كويس. اكتب البيانات بإيدك.'}</span>
+          </div>
+        )}
         {reading.note && <p class="muted">{reading.note}</p>}
         <Button
           variant="ghost"

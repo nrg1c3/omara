@@ -50,11 +50,13 @@ async function asAdmin(page: Page, overrides = {}) {
 }
 
 test('سيناريو 3: أمين الصندوق يوافق على مطالبة', async ({ page }) => {
-  const sent = await asAdmin(page, { a_claim: () => ({ ok: true }) });
+  const sent = await asAdmin(page, { a_claim: () => ({ ok: true, receipt_text: 'إيصال شقة 3: 350 جنيه', wa: '' }) });
   await page.goto('./#a/home');
   await expect(page.getByTestId('collected')).toContainText('1,750');
+  await expect(page.getByText('الإيصال مكتوب فيه 400 ج.م')).toBeVisible();
   await page.getByRole('button', { name: 'وافق' }).click();
-  await expect(page.getByText('اتقبل واتسجّل')).toBeVisible();
+  await expect(page.getByText('التحويل اتقبل واتسجّل.')).toBeVisible();
+  await expect(page.getByText('إيصال شقة 3: 350 جنيه')).toBeVisible();
   expect(body(sent, 'a_claim')).toEqual({ action: 'a_claim', token: 'tok-a', id: 7, decision: 'accept', note: '', amount: 350 });
 });
 
@@ -133,8 +135,8 @@ test('سيناريو 5: أمين الصندوق يقفل البلاغ', async ({
 test('سيناريو 6: تصريح زائر والتحقق منه من شاشة الأمن', async ({ page }) => {
   const sent = await mockApi(page, {
     x_visitor_add: () => ({ ok: true, code: 'K7Q2MZ', share_text: 'تصريح دخول: K7Q2MZ' }),
-    y_guard_login: (b) => (b.building_id === 'TEST14' && b.pin === '333444' ? { ok: true, token: 'tok-g', visitors: [{ code: 'K7Q2MZ', visitor_name: 'أحمد', unit: '7', visit_date: '2026-11-12' }] } : { ok: false, error: 'غلط' }),
-    y_guard_view: () => ({ ok: true, visitors: [{ code: 'K7Q2MZ', visitor_name: 'أحمد', unit: '7', visit_date: '2026-11-12' }] }),
+    y_guard_login: (b) => (b.building_id === 'TEST14' && b.pin === '333444' ? { ok: true, token: 'tok-g', visitors: [{ code: 'K7Q2MZ', name: 'أحمد', unit: '7', date: '2026-11-12', note: '', status: 'ساري' }] } : { ok: false, error: 'غلط' }),
+    y_guard_view: () => ({ ok: true, visitors: [{ code: 'K7Q2MZ', name: 'أحمد', unit: '7', date: '2026-11-12', note: '', status: 'ساري' }] }),
     y_guard_check: (b) => (b.code === 'K7Q2MZ' ? { ok: true, valid: true, message: 'أحمد زائر شقة 7. اتسجل دخوله.' } : { ok: true, valid: false, message: 'الكود ده مش موجود.' })
   });
   await page.goto('./#c=48271930');
@@ -272,4 +274,26 @@ test('خطوات تجهيز العمارة بتظهر وبتختفي', async ({ 
   await page.reload();
   await expect(page.getByTestId('collected')).toBeVisible();
   await expect(page.getByText('جهّز العمارة')).toHaveCount(0);
+});
+
+test('المساعد: كود الدفع بيتبعت مع أول رسالة بس', async ({ page }) => {
+  const sent = await mockApi(page);
+  const chats: Record<string, unknown>[] = [];
+  await page.route('https://api.nrg-egypt.com/webhook/075883eb-3a24-4472-962a-02cdb3bac3cc/chat', async (route) => {
+    chats.push(JSON.parse(route.request().postData() ?? '{}'));
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ output: 'عليك 350 جنيه.' }) });
+  });
+  await page.goto('./#c=48271930');
+  await expect(page).toHaveURL(/#r\/home$/);
+  await page.goto('./#r/more/chat');
+  await page.getByLabel('سؤالك').fill('عليا كام؟');
+  await page.getByRole('button', { name: 'ابعت' }).click();
+  await expect(page.getByText('عليك 350 جنيه.')).toBeVisible();
+  await page.getByLabel('سؤالك').fill('شكراً');
+  await page.getByRole('button', { name: 'ابعت' }).click();
+  await expect.poll(() => chats.length).toBe(2);
+  expect(chats[0]).toMatchObject({ action: 'sendMessage', chatInput: 'كود الدفع بتاعي 48271930. عليا كام؟' });
+  expect(chats[1].chatInput).toBe('شكراً');
+  expect(chats[0].sessionId).toBe(chats[1].sessionId);
+  expect(sent.length).toBeGreaterThan(0);
 });
