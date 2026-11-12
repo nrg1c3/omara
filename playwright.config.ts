@@ -16,8 +16,8 @@ export default defineConfig({
   },
   projects: [
     { name: 'unit', testMatch: /unit\.spec\.ts/ },
-    { name: 'm375', testMatch: /(app|smoke)\.spec\.ts/, use: { viewport: { width: 375, height: 667 } } },
-    { name: 'm390', testMatch: /app\.spec\.ts/, use: { viewport: { width: 390, height: 844 } } }
+    { name: 'm375', testMatch: /(app|flows|smoke|zz-shots)\.spec\.ts/, use: { viewport: { width: 375, height: 667 } } },
+    { name: 'm390', testMatch: /(app|flows)\.spec\.ts/, use: { viewport: { width: 390, height: 844 } } }
   ],
   webServer: {
     command: `npx vite build && npx vite preview --port ${PORT} --strictPort`,

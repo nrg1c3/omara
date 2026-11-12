@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { call, configureApi, type AdminView, type ResidentView } from './api';
+import { call, configureApi, type AdminView, type ResidentView, type XView, type YView } from './api';
 import { replace } from './router';
 import { apiRole, clearSession, loadCachedView, loadSession, saveCachedView, saveSession, type Session } from './session';
 
@@ -12,6 +12,10 @@ export interface AppState {
   loadedAt: number | null;
   /** رسالة تتعرض في شاشة الدخول (مثلاً "الجلسة خلصت") */
   loginNotice: string | null;
+  /** omara-x: التصويت والزوار والصيانة */
+  x: XView | null;
+  /** omara-y: التقسيط والميزانية والأمن */
+  y: YView | null;
 }
 
 function initialState(): AppState {
@@ -23,7 +27,9 @@ function initialState(): AppState {
     resident: r?.data ?? null,
     admin: a?.data ?? null,
     loadedAt: r?.at ?? a?.at ?? null,
-    loginNotice: null
+    loginNotice: null,
+    x: session ? loadCachedView<XView>('x')?.data ?? null : null,
+    y: session ? loadCachedView<YView>('y')?.data ?? null : null
   };
 }
 
@@ -57,7 +63,7 @@ export const SESSION_EXPIRED_MSG = 'الجلسة خلصت. ادخل تاني.';
 
 export function expireSession(notice = SESSION_EXPIRED_MSG): void {
   clearSession();
-  setState({ session: null, resident: null, admin: null, loadedAt: null, loginNotice: notice });
+  setState({ session: null, resident: null, admin: null, x: null, y: null, loadedAt: null, loginNotice: notice });
   replace({ name: 'login' });
 }
 
@@ -80,7 +86,7 @@ export async function loginResident(rawCode: string): Promise<void> {
   saveSession(session);
   const view = stripToken(res) as ResidentView;
   saveCachedView('resident', view);
-  setState({ session, resident: view, admin: null, loadedAt: Date.now(), loginNotice: null });
+  setState({ session, resident: view, admin: null, x: null, y: null, loadedAt: Date.now(), loginNotice: null });
 }
 
 export async function loginAdmin(buildingId: string, pin: string): Promise<void> {
@@ -89,7 +95,7 @@ export async function loginAdmin(buildingId: string, pin: string): Promise<void>
   saveSession(session);
   const view = stripToken(res) as AdminView;
   saveCachedView('admin', view);
-  setState({ session, admin: view, resident: null, loadedAt: Date.now(), loginNotice: null });
+  setState({ session, admin: view, resident: null, x: null, y: null, loadedAt: Date.now(), loginNotice: null });
 }
 
 /** يجيب الشاشة من جديد. لو فشل، الكاش بيفضل معروض. */
@@ -114,6 +120,27 @@ export async function logout(): Promise<void> {
     call(action, {}, { ignoreSession: true }).catch(() => {});
   }
   clearSession();
-  setState({ session: null, resident: null, admin: null, loadedAt: null, loginNotice: null });
+  setState({ session: null, resident: null, admin: null, x: null, y: null, loadedAt: null, loginNotice: null });
   replace({ name: 'login' });
+}
+
+/** يحفظ جلسة جاهزة (بعد تسجيل عمارة، أو دخول الأمن/NRG) */
+export function startSession(session: Session, admin?: AdminView): void {
+  saveSession(session);
+  if (admin) saveCachedView('admin', admin);
+  setState({ session, admin: admin ?? null, resident: null, x: null, y: null, loadedAt: admin ? Date.now() : null, loginNotice: null });
+}
+
+export async function refreshX(): Promise<void> {
+  const v = await call('x_view', {});
+  const data: XView = { polls: v.polls ?? [], visitors: v.visitors ?? [], maintenance: v.maintenance ?? [] };
+  saveCachedView('x', data);
+  setState({ x: data });
+}
+
+export async function refreshY(): Promise<void> {
+  const v = await call('y_view', {});
+  const data: YView = { plans: v.plans ?? [], budget: v.budget ?? null, guards: v.guards ?? [], categories: v.categories ?? [] };
+  saveCachedView('y', data);
+  setState({ y: data });
 }

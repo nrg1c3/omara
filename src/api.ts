@@ -19,104 +19,150 @@ export const ENDPOINTS = {
 export type Endpoint = 'api' | 'x' | 'y';
 
 /* ============================== أنواع مشتركة ============================== */
+// الأشكال دي متطابقة مع ردود TEST14 الحقيقية (نوفمبر 2026).
 
 export type YearMonth = string; // YYYY-MM
 export type ISODate = string; // YYYY-MM-DD
 export type DataUrl = string; // data:image/jpeg;base64,...
-export type PayMethod = string; // مثلاً "كاش" أو "إنستاباي" — القيم بتيجي من الـ API
+export type PayMethod = string; // "كاش مع أمين الصندوق" | "إنستاباي" | "تحويل بنكي" | "محفظة موبايل"
 type Loose = Record<string, unknown>;
 
 export interface Building extends Loose {
-  id?: string;
-  building_id?: string;
-  name?: string;
+  id: string;
+  name: string;
   address?: string;
   due_day?: number;
   payment_info?: string;
-  default_fee?: number;
   treasurer_name?: string;
   treasurer_phone?: string;
   treasurer_email?: string;
 }
 
-export interface UnpaidMonth extends Loose {
-  month?: YearMonth;
-  amount?: number;
+export interface UnitInfo extends Loose {
+  unit: string;
+  owner_name?: string;
+  monthly_fee?: number;
+  phone_on_file?: boolean;
+}
+
+export interface MonthRow extends Loose {
+  month: YearMonth;
+  label: string;
+  due: number;
+  paid: number;
+  remaining: number;
+  due_date?: ISODate;
 }
 
 export interface Account extends Loose {
   balance_due: number;
   credit: number;
-  unpaid: UnpaidMonth[];
-  months: Loose[];
+  unpaid: MonthRow[];
+  months: MonthRow[];
 }
 
 export interface Fund extends Loose {
   balance: number;
+  month?: YearMonth;
+  month_label?: string;
+  due_this_month?: number;
+  collected_this_month?: number;
   paid_units: number;
   total_units: number;
   spent_this_month: number;
-  expense_months: Loose[];
+  expense_months: { month: YearMonth; label: string; total: number }[];
 }
 
 export interface Payment extends Loose {
-  id?: string | number;
+  id?: number;
   unit?: string;
-  amount?: number;
-  month?: YearMonth;
+  month?: YearMonth | 'opening';
+  label?: string;
+  amount: number;
   method?: PayMethod;
   paid_on?: ISODate;
-  reference?: string;
   receipt_id?: string;
+  ref?: string;
+  note?: string;
+  by?: string;
 }
 
+/** مطالبة (تحويل رفعه الساكن ومستني موافقة). الشكل الكامل ما ظهرش في TEST14 لسه. */
 export interface Claim extends Loose {
-  id?: string | number;
+  id: number | string;
   unit?: string;
   amount?: number;
+  ai_amount?: number;
   month?: YearMonth;
+  label?: string;
+  method?: string;
+  paid_on?: ISODate;
+  reference?: string;
+  ref?: string;
   status?: string;
+  note?: string;
+  ai_note?: string;
   receipt_id?: string;
+  date?: string;
 }
 
 export interface LedgerEntry extends Loose {
-  id?: string | number;
-  kind?: 'expense' | 'correction' | 'opening' | string;
-  item?: string;
-  category?: string;
+  no: number;
+  date: ISODate;
+  item: string;
+  category: string;
   vendor?: string;
-  amount?: number;
-  entry_date?: ISODate;
+  amount: number;
+  has_receipt?: boolean;
   receipt_id?: string;
-}
-
-export interface Ticket extends Loose {
-  id?: string | number;
-  category?: string;
-  issue?: string;
-  urgency?: TicketUrgency;
-  status?: TicketStatus;
-  resolution?: string;
-}
-
-export interface ServiceRequest extends Loose {
-  id?: string | number;
-  trade?: string;
-  description?: string;
-  status?: ServiceStatus;
-  price?: number;
-}
-
-export interface Notice extends Loose {
-  id?: string | number;
-  title?: string;
-  body?: string;
-  date?: string;
+  /** رقم القيد اللي التصحيح ده بيصححه */
+  corrects?: string;
+  reason?: string;
+  by?: string;
 }
 
 export type TicketUrgency = 'عاجل' | 'عادي';
 export type TicketStatus = 'جديد' | 'جاري الشغل' | 'اتحل';
 export type ServiceStatus = 'جديد' | 'اتواصل مع الفني' | 'اتنفذ' | 'اتلغى';
+
+export interface Ticket extends Loose {
+  id: number;
+  no?: string;
+  unit?: string;
+  issue: string;
+  category: string;
+  urgency: TicketUrgency;
+  status: TicketStatus;
+  resolution?: string;
+  date?: ISODate;
+  receipt_id?: string;
+  reporter?: string;
+  mine?: boolean;
+}
+
+export interface ServiceRequest extends Loose {
+  id: number;
+  no?: string;
+  unit?: string;
+  trade: string;
+  description: string;
+  preferred_time?: string;
+  status: ServiceStatus;
+  provider_name?: string;
+  provider_phone?: string;
+  price?: number;
+  resident_name?: string;
+  resident_phone?: string;
+  date?: ISODate;
+}
+
+export interface Notice extends Loose {
+  no?: string;
+  title: string;
+  body: string;
+  date?: ISODate;
+  by?: string;
+}
 
 /** الحاجات المشتركة بين شاشة الساكن وشاشة أمين الصندوق */
 export interface ViewCommon extends Loose {
@@ -128,59 +174,71 @@ export interface ViewCommon extends Loose {
   tickets: Ticket[];
   services: ServiceRequest[];
   notices: Notice[];
+  trades?: string[];
+  ticket_categories?: string[];
 }
 
 /** شاشة الساكن (role: "resident") */
 export interface ResidentView extends ViewCommon {
   role: 'resident';
-  unit: string | Loose;
+  unit: UnitInfo;
   pay_code: string;
   account: Account;
 }
 
 export interface LateUnit extends Loose {
-  unit?: string;
-  amount?: number;
+  unit: string;
+  owner_name?: string;
+  phone?: string;
+  amount: number;
+  months?: number;
+  months_text?: string;
   /** نص رسالة التذكير */
   text: string;
-  /** لينك wa.me جاهز */
+  /** لينك wa.me جاهز (فاضي لو مفيش تليفون) */
   wa: string;
 }
 
 export interface AdminUnit extends Loose {
-  id?: string | number;
-  unit?: string;
+  id: number;
+  unit: string;
   owner_name?: string;
   phone?: string;
   monthly_fee?: number;
   pay_code: string;
-  balance?: number;
+  balance_due?: number;
+  credit?: number;
+  unpaid?: { month: YearMonth; label: string; remaining: number }[];
 }
 
 /** شاشة أمين الصندوق (role: "admin") */
 export interface AdminView extends ViewCommon {
   role: 'admin';
+  admin_name?: string;
   late: LateUnit[];
   units: AdminUnit[];
   group_message: string;
   open_tickets: number;
   app_url: string;
+  expense_categories?: string[];
+  methods?: PayMethod[];
 }
 
 /* ============================== omara-x ============================== */
 
 export interface Poll extends Loose {
-  no?: number;
-  poll_no?: number;
+  no: string;
   question: string;
   options: string[];
   ends_on?: ISODate;
   closed: boolean;
-  my_choice?: string | null;
-  voted?: number | boolean;
+  by?: string;
+  my_choice?: string;
+  voted?: number;
   total_units?: number;
   participation?: number;
-  results?: Loose;
+  results?: { option: string; count: number }[];
+  voters?: string[];
 }
 
 export interface Visitor extends Loose {
@@ -190,11 +248,11 @@ export interface Visitor extends Loose {
   note?: string;
   unit?: string;
   status?: string;
+  entered_at?: string;
 }
 
 export interface MaintenanceTask extends Loose {
-  no?: number;
-  task_no?: number;
+  no: string;
   title: string;
   every_days: number;
   last_done?: ISODate;
@@ -213,20 +271,22 @@ export interface XView {
 /* ============================== omara-y ============================== */
 
 export interface InstallmentPlan extends Loose {
-  no: number;
+  no: string;
   unit: string;
   total: number;
   months: number;
   per_month: number;
+  start?: YearMonth;
   paid: number;
   left: number;
   late_installments: number;
   status: string;
-  schedule: Loose[];
+  note?: string;
+  schedule: { month: YearMonth; label: string; amount: number; done: boolean; due: boolean }[];
 }
 
 export interface BudgetCategory extends Loose {
-  category?: string;
+  category: string;
   monthly: number;
   spent: number;
   pct: number;
@@ -234,15 +294,14 @@ export interface BudgetCategory extends Loose {
 }
 
 export interface Guard extends Loose {
-  id?: string | number;
-  name?: string;
-  active?: boolean;
+  id: number;
+  name: string;
 }
 
 export interface YView {
   plans: InstallmentPlan[];
-  /** لأمين الصندوق بس */
-  budget?: { categories: BudgetCategory[] } & Loose;
+  /** لأمين الصندوق بس (للساكن null) */
+  budget?: { month?: string; categories: BudgetCategory[]; total_budget?: number; total_spent?: number } | null;
   guards?: Guard[];
   categories?: string[];
 }
@@ -380,20 +439,20 @@ export interface Actions {
   a_pin: Def<'api', { old_pin: string; new_pin: string }, Loose>;
 
   // ---- omara-x ----
-  x_view: Def<'x', None, XView>;
+  x_view: Def<'x', None, XView & Loose>;
   x_poll_add: Def<'x', { question: string; options: string[]; ends_on: ISODate }, { group_text: string } & Loose>;
-  x_poll_close: Def<'x', { poll_no: number }, { group_text: string } & Loose>;
-  x_vote: Def<'x', { poll_no: number; choice: string }, Loose>;
+  x_poll_close: Def<'x', { poll_no: string }, { group_text: string } & Loose>;
+  x_vote: Def<'x', { poll_no: string; choice: string }, Loose>;
   x_visitor_add: Def<'x', { visitor_name: string; visit_date: ISODate; note?: string }, { code: string; share_text: string }>;
   x_visitor_cancel: Def<'x', { code: string }, Loose>;
   x_visitor_check: Def<'x', { code: string }, { valid: boolean } & Loose>;
   x_maint_add: Def<'x', { title: string; every_days: number; last_done: ISODate; vendor?: string }, Loose>;
-  x_maint_done: Def<'x', { task_no: number; done_on: ISODate }, Loose>;
+  x_maint_done: Def<'x', { task_no: string; done_on: ISODate }, Loose>;
 
   // ---- omara-y ----
-  y_view: Def<'y', None, YView>;
+  y_view: Def<'y', None, YView & Loose>;
   y_plan_add: Def<'y', { unit: string; months: number; start_month: YearMonth; total?: number; note?: string }, { share_text: string } & Loose>;
-  y_plan_cancel: Def<'y', { plan_no: number }, Loose>;
+  y_plan_cancel: Def<'y', { plan_no: string }, Loose>;
   y_budget_set: Def<'y', { category: string; monthly: number }, Loose>;
   y_report: Def<'y', { from: YearMonth; to: YearMonth }, Report>;
   y_guard_set: Def<'y', { name: string }, { pin: string; share_text: string } & Loose>;

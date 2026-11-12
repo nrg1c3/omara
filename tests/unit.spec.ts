@@ -43,7 +43,7 @@ test('العميل: endpoint وtoken وrole بيتضافوا صح', () => {
   expect(buildBody('a_notice', { title: 'a', body: 'b' })).toEqual({ action: 'a_notice', title: 'a', body: 'b', token: 'T' });
   // omara-x/y: token + role
   expect(buildBody('x_view', {})).toEqual({ action: 'x_view', token: 'T', role: 'a' });
-  expect(buildBody('y_plan_cancel', { plan_no: 3 })).toEqual({ action: 'y_plan_cancel', plan_no: 3, token: 'T', role: 'a' });
+  expect(buildBody('y_plan_cancel', { plan_no: 'L1' })).toEqual({ action: 'y_plan_cancel', plan_no: 'L1', token: 'T', role: 'a' });
   // الأمن وNRG: token من غير role
   expect(buildBody('y_guard_check', { code: 'AB12CD' })).toEqual({ action: 'y_guard_check', code: 'AB12CD', token: 'T' });
   expect(buildBody('y_nrg_login', { key: 'k' })).toEqual({ action: 'y_nrg_login', key: 'k' });

@@ -1,13 +1,18 @@
 import { useEffect } from 'preact/hooks';
 import { OfflineBar } from './components/OfflineBar';
 import { replace, useRoute, type Route } from './router';
-import { AdminApp } from './screens/admin/AdminApp';
 import { CodeLogin } from './screens/CodeLogin';
 import { Login } from './screens/Login';
-import { PlaceholderScreen } from './screens/Placeholder';
+import { ToastHost } from './components/Toast';
 import { ResidentApp } from './screens/resident/ResidentApp';
 import type { Session } from './session';
 import { useAppState } from './store';
+import { lazy } from './lib/lazy';
+
+const AdminApp = lazy(() => import('./screens/admin/AdminApp').then((m) => m.AdminApp));
+const GuardScreen = lazy(() => import('./screens/Guard').then((m) => m.GuardScreen));
+const NrgScreen = lazy(() => import('./screens/Nrg').then((m) => m.NrgScreen));
+const Register = lazy(() => import('./screens/Register').then((m) => m.Register));
 
 function homeFor(s: Session): Route | null {
   if (s.role === 'resident') return { name: 'resident', tab: 'home' };
@@ -41,11 +46,12 @@ export function App() {
       <OfflineBar />
       {target.name === 'login' && <Login initialMode={target.mode} />}
       {target.name === 'code' && <CodeLogin code={target.code} />}
-      {target.name === 'resident' && <ResidentApp tab={target.tab} />}
-      {target.name === 'admin' && <AdminApp tab={target.tab} />}
-      {target.name === 'guard' && <PlaceholderScreen title="شاشة الأمن" phase={4} />}
-      {target.name === 'nrg' && <PlaceholderScreen title="لوحة NRG" phase={4} />}
-      {target.name === 'register' && <PlaceholderScreen title="سجّل عمارتك" phase={4} />}
+      {target.name === 'resident' && <ResidentApp tab={target.tab} sub={target.sub} />}
+      {target.name === 'admin' && <AdminApp tab={target.tab} sub={target.sub} />}
+      {target.name === 'guard' && <GuardScreen />}
+      {target.name === 'nrg' && <NrgScreen />}
+      {target.name === 'register' && <Register />}
+      <ToastHost />
     </>
   );
 }

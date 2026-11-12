@@ -1,5 +1,5 @@
 import type { Page, Request } from '@playwright/test';
-import { ADMIN_VIEW, RESIDENT_VIEW } from './fixtures';
+import { ADMIN_VIEW, RESIDENT_VIEW, X_VIEW, Y_VIEW } from './fixtures';
 
 export interface Sent {
   url: string;
@@ -14,7 +14,10 @@ export const DEFAULT_HANDLERS: Record<string, Handler> = {
   r_view: (b) => (b.token === 'tok-r' ? RESIDENT_VIEW : { ok: false, error: 'SESSION' }),
   a_login: (b) => (b.building_id === 'TEST14' && b.pin === '111222' ? { ...ADMIN_VIEW, token: 'tok-a' } : { ok: false, error: 'الرقم السري غلط.' }),
   a_view: (b) => (b.token === 'tok-a' ? ADMIN_VIEW : { ok: false, error: 'SESSION' }),
-  logout: () => ({ ok: true })
+  logout: () => ({ ok: true }),
+  y_logout: () => ({ ok: true }),
+  x_view: () => X_VIEW,
+  y_view: () => Y_VIEW
 };
 
 /** بيعمل mock لكل endpoints الـ API وبيسجل اللي اتبعت */
@@ -63,3 +66,22 @@ export async function expectTapTargets(page: Page) {
   );
   if (small.length) throw new Error(`أزرار أصغر من 44px: ${small.join('، ')}`);
 }
+
+/** يدخل بجلسة جاهزة من غير شاشة الدخول */
+export async function seedSession(page: Page, role: 'resident' | 'admin' | 'guard', token: string) {
+  await page.addInitScript(
+    ([r, t]) => {
+      if (!sessionStorage.getItem('seeded')) {
+        localStorage.setItem('omara.session', JSON.stringify({ role: r, token: t, at: Date.now() }));
+        sessionStorage.setItem('seeded', '1');
+      }
+    },
+    [role, token]
+  );
+}
+
+/** صورة PNG صغيرة (إيصال وهمي) */
+export const TINY_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEklEQVR4nGP4z8CAFWEXHbQSACj/P8Fu7N9hAAAAAElFTkSuQmCC',
+  'base64'
+);
