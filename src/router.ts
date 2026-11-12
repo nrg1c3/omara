@@ -30,6 +30,7 @@ export function parseHash(hash: string): Route {
   if (!h || h === 'login') return { name: 'login' };
   if (h === 'login/admin' || h === 'admin') return { name: 'login', mode: 'admin' };
   if (/^(guard|nrg)&/.test(h)) return { name: h.startsWith('guard') ? 'guard' : 'nrg' };
+  if (/^s=/.test(h)) return { name: 'login' }; // لينك قديم اتاخد في legacy.ts
   const code = /^c=(.+)$/.exec(h);
   if (code) return { name: 'code', code: code[1] };
   if (h === 'guard') return { name: 'guard' };

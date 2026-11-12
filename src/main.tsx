@@ -1,3 +1,4 @@
+import './legacy'; // لازم الأول: بياخد جلسة لينكات النسخة القديمة قبل ما الـ store يتحمّل
 import { render } from 'preact';
 import { App } from './app';
 import './styles/base.css';

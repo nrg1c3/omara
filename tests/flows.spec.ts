@@ -297,3 +297,33 @@ test('المساعد: كود الدفع بيتبعت مع أول رسالة بس
   expect(chats[0].sessionId).toBe(chats[1].sessionId);
   expect(sent.length).toBeGreaterThan(0);
 });
+
+test('لينك قديم #s= (ساكن): الجلسة بتتحفظ مرة واحدة والتوكن بيتشال من اللينك', async ({ page }) => {
+  const sent = await mockApi(page);
+  await page.goto('./#s=tok-r&r=r');
+  await expect(page).toHaveURL(/#r\/home$/);
+  await expect(page.getByTestId('balance-due')).toBeVisible();
+  expect(page.url()).not.toContain('tok-r');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('omara.session')!).token)).toBe('tok-r');
+  expect(body(sent, 'r_view')).toEqual({ action: 'r_view', token: 'tok-r' });
+  // بعد الخروج، نفس اللينك (من الشاشة الرئيسية) ما يدخّلش تاني
+  await page.goto('./#r/more');
+  await page.getByRole('button', { name: 'خروج' }).click();
+  await expect(page).toHaveURL(/#login$/);
+  await page.goto('./#s=tok-r&r=r');
+  await page.reload();
+  await expect(page.getByLabel('كود الدفع')).toBeVisible();
+});
+
+test('لينك قديم #s= (أمين صندوق) و#guard&t=', async ({ page }) => {
+  const sent = await mockApi(page, { y_guard_view: () => ({ ok: true, visitors: [] }) });
+  await page.goto('./#s=tok-a&r=a');
+  await expect(page).toHaveURL(/#a\/home$/);
+  await expect(page.getByTestId('collected')).toBeVisible();
+  await page.evaluate(() => localStorage.clear());
+  await page.goto('./#guard&t=tok-g');
+  await page.reload();
+  await expect(page).toHaveURL(/#guard$/);
+  await expect(page.getByLabel('كود التصريح')).toBeVisible();
+  await expect.poll(() => body(sent, 'y_guard_view')).toEqual({ action: 'y_guard_view', token: 'tok-g' });
+});

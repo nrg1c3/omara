@@ -53,3 +53,13 @@ test('حجم الـ data URL', () => {
   expect(dataUrlBytes('data:image/jpeg;base64,QUJD')).toBe(3);
   expect(dataUrlBytes('data:image/jpeg;base64,QUI=')).toBe(2);
 });
+
+test('لينكات النسخة القديمة', async () => {
+  const { parseLegacyHash } = await import('../src/legacy');
+  expect(parseLegacyHash('#s=abc&r=a')).toEqual({ role: 'admin', token: 'abc', hash: '#a/home' });
+  expect(parseLegacyHash('#s=abc')).toEqual({ role: 'resident', token: 'abc', hash: '#r/home' });
+  expect(parseLegacyHash('#guard&t=g1')).toEqual({ role: 'guard', token: 'g1', hash: '#guard' });
+  expect(parseLegacyHash('#nrg&t=n1')).toEqual({ role: 'nrg', token: 'n1', hash: '#nrg' });
+  expect(parseLegacyHash('#guard')).toBeNull();
+  expect(parseLegacyHash('#c=48271930')).toBeNull();
+});
