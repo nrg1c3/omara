@@ -4,7 +4,8 @@ import { collectErrors } from './mock';
 /**
  * Smoke على الـ API الحقيقي (TEST14 بس، CLAUDE.md §6). بيقرا بس، وبيعمل logout في الآخر.
  * شغّله: npm run test:smoke
- * محتاج الـ origin (localhost:4173) يكون في ALLOWED في workflow n8n، وإلا الدخول هيترفض.
+ * الرقم السري لأمين الصندوق التجريبي من متغير البيئة (ما بيتحطش في الريبو):
+ *   SMOKE=1 OMARA_TEST_PIN=xxxxxx npm run test:smoke
  */
 test.skip(!process.env.SMOKE, 'شغّله بـ SMOKE=1');
 
@@ -26,6 +27,10 @@ test('دخول ساكن TEST14 بلينك #c= والخروج', async ({ page }) 
   expect(errors).toEqual([]);
 });
 
+test.describe(() => {
+  test.skip(!process.env.OMARA_TEST_PIN, 'محتاج OMARA_TEST_PIN');
+});
+
 test('أمين صندوق TEST14: الدخول والشاشات بتفتح بالبيانات الحقيقية والخروج', async ({ page }) => {
   const errors = collectErrors(page);
   const bad: string[] = [];
@@ -37,7 +42,7 @@ test('أمين صندوق TEST14: الدخول والشاشات بتفتح با�
   });
   await page.goto('./#login/admin');
   await page.getByLabel('كود العمارة').fill('TEST14');
-  await page.getByLabel('الرقم السري').fill('111222');
+  await page.getByLabel('الرقم السري').fill(process.env.OMARA_TEST_PIN!);
   await page.getByRole('button', { name: 'ادخل' }).click();
   await expect(page).toHaveURL(/#a\/home$/, { timeout: 30_000 });
   await expect(page.getByTestId('collected')).toBeVisible();

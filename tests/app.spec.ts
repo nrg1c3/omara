@@ -90,11 +90,13 @@ test.describe('سيناريو 1: دخول الساكن', () => {
     const sent = await mockApi(page);
     await page.goto('./#c=48271930');
     await expect(page.getByTestId('balance-due')).toBeVisible();
+    const before = sent.filter((s) => s.body.action === 'r_view').length;
     await page.reload();
     await expect(page).toHaveURL(/#r\/home$/);
     await expect(page.getByTestId('balance-due')).toBeVisible();
     expect(sent.filter((s) => s.body.action === 'r_login')).toHaveLength(1);
-    expect(sent.filter((s) => s.body.action === 'r_view').length).toBeGreaterThanOrEqual(2);
+    // بعد الـ reload الشاشة بتتحدّث بالتوكن المحفوظ (الكاش بيبان الأول)
+    await expect.poll(() => sent.filter((s) => s.body.action === 'r_view').length).toBeGreaterThan(before);
   });
 
   test('الشريط اللي تحت بيتنقل بين التابات، والخروج بيرجّع للدخول', async ({ page }) => {
