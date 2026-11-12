@@ -1,0 +1,35 @@
+/* Design tokens — من التصميم المعتمد (CLAUDE.md §4). ما تغيّرش القيم من غير مراجعة. */
+:root {
+  --primary: #0E6E66;
+  --primary-dark: #0A524C;
+  --on-primary: #FFFFFF;
+  --ink: #1B2A2F;
+  --muted: #5B6B70;
+  --bg: #F6F5F1;
+  --card: #FFFFFF;
+  --border: #E6E3DA;
+  --track: #ECE9E1;
+  --success-bg: #E7F2F0;
+  --success-ink: #0A524C;
+  --warn-bg: #FFF4E8;
+  --warn-ink: #8A4208;
+  --radius-card: 20px;
+  --radius-btn: 14px;
+
+  /* مشتقة (مش في التصميم بالاسم، بس متسقة معاه) */
+  --danger-bg: #FDECEC;
+  --danger-ink: #A11D1D;
+  --border-strong: #DAD7CE;
+  --focus: #0E6E66;
+  --font: 'IBM Plex Sans Arabic', Tahoma, 'Segoe UI', sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --tap: 44px;
+  --tap-primary: 56px;
+  --nav-h: 66px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
