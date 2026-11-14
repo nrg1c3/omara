@@ -133,10 +133,12 @@ test('سيناريو 5: أمين الصندوق يقفل البلاغ', async ({
 });
 
 test('سيناريو 6: تصريح زائر والتحقق منه من شاشة الأمن', async ({ page }) => {
+  const d = new Date();
+  const TODAY = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const sent = await mockApi(page, {
     x_visitor_add: () => ({ ok: true, code: 'K7Q2MZ', share_text: 'تصريح دخول: K7Q2MZ' }),
-    y_guard_login: (b) => (b.building_id === 'TEST14' && b.pin === '333444' ? { ok: true, token: 'tok-g', visitors: [{ code: 'K7Q2MZ', name: 'أحمد', unit: '7', date: '2026-11-12', note: '', status: 'ساري' }] } : { ok: false, error: 'غلط' }),
-    y_guard_view: () => ({ ok: true, visitors: [{ code: 'K7Q2MZ', name: 'أحمد', unit: '7', date: '2026-11-12', note: '', status: 'ساري' }] }),
+    y_guard_login: (b) => (b.building_id === 'TEST14' && b.pin === '333444' ? { ok: true, token: 'tok-g', visitors: [{ code: 'K7Q2MZ', name: 'أحمد', unit: '7', date: TODAY, note: '', status: 'ساري' }] } : { ok: false, error: 'غلط' }),
+    y_guard_view: () => ({ ok: true, visitors: [{ code: 'K7Q2MZ', name: 'أحمد', unit: '7', date: TODAY, note: '', status: 'ساري' }] }),
     y_guard_check: (b) => (b.code === 'K7Q2MZ' ? { ok: true, valid: true, message: 'أحمد زائر شقة 7. اتسجل دخوله.' } : { ok: true, valid: false, message: 'الكود ده مش موجود.' })
   });
   await page.goto('./#c=48271930');
@@ -326,4 +328,35 @@ test('لينك قديم #s= (أمين صندوق) و#guard&t=', async ({ page })
   await expect(page).toHaveURL(/#guard$/);
   await expect(page.getByLabel('كود التصريح')).toBeVisible();
   await expect.poll(() => body(sent, 'y_guard_view')).toEqual({ action: 'y_guard_view', token: 'tok-g' });
+});
+
+test('لوحة NRG: دخول بالمفتاح، الإجمالي، العماير مترتبة من الأضعف، والبحث', async ({ page }) => {
+  const errors = collectErrors(page);
+  const B = (id: string, name: string, rate: number, extra = {}) => ({ id, name, treasurer: 'أ. سامي', phone: '01000000000', units: 10, monthly_due: 3500, collected: Math.round(35 * rate), rate, fund: 9000, pending_claims: 1, services: 2, commission: 60, since: '2026-10-01', active: true, ...extra });
+  const buildings = [B('TEST14', 'عمارة التجربة', 90), B('B2', 'برج النيل', 30), B('B3', 'عمارة الورد', 60), B('B4', 'عمارة قديمة', 10, { active: false }), B('B5', 'خامسة', 70), B('B6', 'سادسة', 75)];
+  const sent = await mockApi(page, {
+    y_nrg_login: (b) => (b.key === 'FAKE-KEY' ? { ok: true, token: 'tok-n' } : { ok: false, error: 'المفتاح غلط.' }),
+    y_nrg_view: () => ({ ok: true, month: '2026-11', buildings, totals: { buildings: 6, units: 60, monthly_due: 21000, collected: 11900, services: 12, commission: 360, subscription_estimate: 900 } })
+  });
+  await page.goto('./#nrg');
+  await page.getByLabel('المفتاح').fill('wrong');
+  await page.getByRole('button', { name: 'ادخل' }).click();
+  await expect(page.getByText('المفتاح غلط.')).toBeVisible();
+  await page.getByLabel('المفتاح').fill('FAKE-KEY');
+  await page.getByRole('button', { name: 'ادخل' }).click();
+  await expect(page.getByTestId('nrg-collected')).toContainText('11,900');
+  await expect(page.getByText('الاشتراك المتوقع (تقدير)')).toBeVisible();
+  // المفتاح ما بيتحفظش، التوكن بس
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('FAKE-KEY');
+  const titles = await page.locator('.list-row__title').allTextContents();
+  expect(titles[0]).toContain('برج النيل');
+  expect(titles[titles.length - 1]).toContain('عمارة قديمة');
+  await expect(page.getByText('مش شغالة')).toBeVisible();
+  await page.getByLabel('دوّر على عمارة').fill('الورد');
+  await expect(page.locator('.list-row__title')).toHaveCount(1);
+  await expectNoHorizontalScroll(page);
+  await expectTapTargets(page);
+  await page.getByRole('button', { name: 'خروج' }).click();
+  await expect.poll(() => sent.some((s) => s.body.action === 'y_logout')).toBe(true);
+  expect(errors).toEqual([]);
 });

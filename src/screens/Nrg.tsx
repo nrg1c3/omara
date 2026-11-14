@@ -1,12 +1,14 @@
 import type { JSX } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { call } from '../api';
+import { call, type NrgView } from '../api';
 import { Button } from '../components/Button';
-import { Card } from '../components/Card';
+import { Card, Progress } from '../components/Card';
+import { Field } from '../components/Field';
+import { Icon } from '../components/Icon';
 import { CardSkeleton } from '../components/Loading';
 import { ErrorMessage } from '../components/Messages';
 import { Badge, Empty, PageHeader, Row } from '../components/Page';
-import { formatNumber } from '../lib/format';
+import { formatDate, formatMoney, formatMonth, formatNumber } from '../lib/format';
 import { useAction } from '../lib/useAction';
 import { logout, startSession, useAppState } from '../store';
 
@@ -52,70 +54,44 @@ function NrgLogin() {
   );
 }
 
-const LABELS: Record<string, string> = {
-  id: 'الكود',
-  building_id: 'الكود',
-  name: 'الاسم',
-  units: 'الشقق',
-  total_units: 'الشقق',
-  due: 'المستحق',
-  due_this_month: 'المستحق',
-  collected: 'المحصّل',
-  collected_this_month: 'المحصّل',
-  collection_pct: 'نسبة التحصيل %',
-  pct: 'نسبة التحصيل %',
-  fund: 'الصندوق',
-  balance: 'الصندوق',
-  claims: 'مطالبات',
-  pending_claims: 'مطالبات مستنية',
-  services: 'صنايعية',
-  commission: 'عمولة الصنايعية',
-  expected_subscription: 'الاشتراك المتوقع',
-  subscription: 'الاشتراك المتوقع',
-  created: 'تاريخ التسجيل',
-  treasurer_name: 'أمين الصندوق',
-  treasurer: 'أمين الصندوق',
-  phone: 'الموبايل',
-  monthly_due: 'المستحق في الشهر',
-  rate: 'نسبة التحصيل %',
-  since: 'من يوم',
-  active: 'شغالة',
-  buildings: 'العماير',
-  subscription_estimate: 'الاشتراك المتوقع (تقدير)',
-  month: 'الشهر',
-  treasurer_phone: 'الموبايل'
-};
+const rateTone = (r: number) => (r >= 80 ? 'success' : r >= 50 ? 'warn' : 'danger') as 'success' | 'warn' | 'danger';
 
-type Obj = Record<string, unknown>;
-
-function fmt(v: unknown): string {
-  if (typeof v === 'boolean') return v ? 'أيوه' : 'لأ';
-  if (typeof v === 'number') return formatNumber(v);
-  if (Array.isArray(v)) return formatNumber(v.length);
-  if (v && typeof v === 'object') return '';
-  return String(v ?? '');
+function Kv({ k, v }: { k: string; v: string }) {
+  return (
+    <div class="kv">
+      <dt>{k}</dt>
+      <dd class="num">{v}</dd>
+    </div>
+  );
 }
 
-/** شكل رد y_nrg_view مش موثّق بالتفصيل، فبنعرض أي array فيه كعماير وأي أرقام فوق كإجماليات */
 function NrgDashboard() {
-  const [data, setData] = useState<Obj | null>(null);
+  const [data, setData] = useState<NrgView | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const load = () =>
-    call('y_nrg_view', {})
-      .then((r) => setData(r as Obj))
+  const [q, setQ] = useState('');
+  const load = () => {
+    setErr(null);
+    return call('y_nrg_view', {})
+      .then((r) => setData(r))
       .catch((e: Error) => setErr(e.message));
+  };
   useEffect(() => {
     load();
   }, []);
 
-  const list = data ? ((Object.values(data).find((v) => Array.isArray(v) && v.length && typeof v[0] === 'object') as Obj[] | undefined) ?? []) : [];
-  const totals = data ? Object.entries(data).filter(([k, v]) => k !== 'ok' && k !== 'month' && (typeof v === 'number' || (v && typeof v === 'object' && !Array.isArray(v)))) : [];
+  const all = data?.buildings ?? [];
+  const term = q.trim().toLowerCase();
+  const list = (term ? all.filter((b) => `${b.name} ${b.id} ${b.treasurer ?? ''} ${b.phone ?? ''}`.toLowerCase().includes(term)) : all)
+    .slice()
+    .sort((a, b) => Number(b.active !== false) - Number(a.active !== false) || a.rate - b.rate);
+  const t = data?.totals;
+  const rate = t && t.monthly_due ? Math.round((t.collected / t.monthly_due) * 100) : 0;
 
   return (
     <main class="screen">
       <PageHeader
         title="لوحة NRG"
-        subtitle={data ? `${formatNumber(list.length)} عمارة${typeof data.month === 'string' ? ` · ${data.month}` : ''}` : undefined}
+        subtitle={data ? `${formatNumber(all.length)} عمارة${data.month ? ` · ${formatMonth(data.month)}` : ''}` : undefined}
         action={
           <Button variant="ghost" icon="logout" onClick={() => logout()}>
             خروج
@@ -124,44 +100,64 @@ function NrgDashboard() {
       />
       <ErrorMessage error={err} onRetry={load} />
       {!data && !err && <CardSkeleton lines={4} />}
-      {totals.length > 0 && (
+      {t && (
+        <Card hero>
+          <span style={{ opacity: 0.95 }}>المحصّل الشهر ده</span>
+          <span class="num" style={{ fontSize: '28px', fontWeight: 700, lineHeight: 1.1 }} data-testid="nrg-collected">
+            {formatMoney(t.collected)} <span style={{ fontSize: '16px', fontWeight: 500 }}>من {formatMoney(t.monthly_due)}</span>
+          </span>
+          <div class="progress" style={{ background: 'rgba(255,255,255,0.25)' }} role="progressbar" aria-label="نسبة التحصيل" aria-valuenow={rate} aria-valuemin={0} aria-valuemax={100}>
+            <div class="progress__bar" style={{ width: `${Math.min(100, rate)}%`, background: '#fff' }} />
+          </div>
+          <span>نسبة التحصيل {formatNumber(rate)}%</span>
+        </Card>
+      )}
+      {t && (
         <Card title="الإجمالي">
           <dl class="stack" style={{ gap: 0, margin: 0 }}>
-            {totals.flatMap(([k, v]) =>
-              typeof v === 'number'
-                ? [[k, v] as [string, unknown]]
-                : Object.entries(v as Obj).filter(([, x]) => typeof x === 'number' || typeof x === 'string')
-            ).map(([k, v]) => (
-              <div class="kv" key={k}>
-                <dt>{LABELS[k] ?? k}</dt>
-                <dd class="num">{fmt(v)}</dd>
-              </div>
-            ))}
+            <Kv k="العماير" v={formatNumber(t.buildings)} />
+            <Kv k="الشقق" v={formatNumber(t.units)} />
+            <Kv k="طلبات الصنايعية" v={formatNumber(t.services)} />
+            <Kv k="عمولة الصنايعية" v={formatMoney(t.commission)} />
+            <Kv k="الاشتراك المتوقع (تقدير)" v={formatMoney(t.subscription_estimate)} />
           </dl>
         </Card>
       )}
-      {data && list.length === 0 && <Empty icon="building">مفيش عماير.</Empty>}
+      {all.length > 5 && <Field label="دوّر على عمارة" value={q} onInput={setQ} />}
+      {data && all.length === 0 && <Empty icon="building">مفيش عماير.</Empty>}
+      {data && all.length > 0 && list.length === 0 && <Empty icon="building">مفيش عمارة بالاسم ده.</Empty>}
       {list.length > 0 && (
         <div class="list">
-          {list.map((b, i) => {
-            const title = String(b.name ?? b.building_name ?? b.id ?? `عمارة ${i + 1}`);
-            const entries = Object.entries(b).filter(([k, v]) => !['name', 'building_name'].includes(k) && v !== '' && v !== null && typeof v !== 'object');
-            const inactive = b.active === false;
-            const arrays = Object.entries(b).filter(([, v]) => Array.isArray(v));
-            return (
-              <Row key={i} title={title} badge={inactive ? <Badge tone="neutral">مش شغالة</Badge> : undefined}>
-                <dl class="stack" style={{ gap: 0, margin: 0 }}>
-                  {[...entries, ...arrays].map(([k, v]) => (
-                    <div class="kv" key={k}>
-                      <dt>{LABELS[k] ?? k}</dt>
-                      <dd class="num">{fmt(v)}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </Row>
-            );
-          })}
+          {list.map((b) => (
+            <Row
+              key={b.id}
+              title={`${b.name} · ${b.id}`}
+              meta={[`${formatNumber(b.units)} شقة`, b.treasurer ? `أمين الصندوق ${b.treasurer}` : '', b.since ? `من ${formatDate(b.since)}` : ''].filter(Boolean).join(' · ')}
+              badge={b.active === false ? <Badge tone="neutral">مش شغالة</Badge> : <Badge tone={rateTone(b.rate)}>{formatNumber(b.rate)}%</Badge>}
+            >
+              <Progress value={b.collected} max={b.monthly_due} label={`تحصيل ${b.name}`} />
+              <dl class="stack" style={{ gap: 0, margin: 0 }}>
+                <Kv k="اتحصّل" v={`${formatMoney(b.collected)} من ${formatMoney(b.monthly_due)}`} />
+                <Kv k="الصندوق" v={formatMoney(b.fund)} />
+                <Kv k="تحويلات مستنية" v={formatNumber(b.pending_claims)} />
+                <Kv k="صنايعية" v={`${formatNumber(b.services)} · عمولة ${formatMoney(b.commission)}`} />
+              </dl>
+              {b.phone && (
+                <div class="list-row__actions">
+                  <a class="btn btn--secondary" href={`tel:${b.phone}`}>
+                    <Icon name="phone" size={20} />
+                    <span class="ltr">{b.phone}</span>
+                  </a>
+                </div>
+              )}
+            </Row>
+          ))}
         </div>
+      )}
+      {data && (
+        <Button variant="ghost" icon="refresh" onClick={load}>
+          تحديث
+        </Button>
       )}
     </main>
   );

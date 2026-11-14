@@ -242,6 +242,31 @@ export interface Poll extends Loose {
 }
 
 /** status: 'ساري' | 'دخل' (الملغي ما بيرجعش) */
+export interface NrgBuilding {
+  id: string;
+  name: string;
+  treasurer?: string;
+  phone?: string;
+  units: number;
+  monthly_due: number;
+  collected: number;
+  /** نسبة التحصيل من 0 لـ 100 */
+  rate: number;
+  fund: number;
+  pending_claims: number;
+  services: number;
+  commission: number;
+  since?: string;
+  active?: boolean;
+}
+
+export interface NrgView {
+  ok?: boolean;
+  month?: string;
+  buildings: NrgBuilding[];
+  totals?: { buildings: number; units: number; monthly_due: number; collected: number; services: number; commission: number; subscription_estimate: number };
+}
+
 export interface Visitor extends Loose {
   code: string;
   name: string;
@@ -461,7 +486,7 @@ export interface Actions {
   y_guard_view: Def<'y', None, { visitors: Visitor[] } & Loose>;
   y_guard_check: Def<'y', { code: string }, { valid: boolean; message: string } & Loose>;
   y_nrg_login: Def<'y', { key: string }, { token: string } & Loose>;
-  y_nrg_view: Def<'y', None, { buildings: Loose[] } & Loose>;
+  y_nrg_view: Def<'y', None, NrgView>;
   y_logout: Def<'y', None, Loose>;
 }
 
