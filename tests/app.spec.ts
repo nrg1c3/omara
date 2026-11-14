@@ -51,7 +51,7 @@ test.describe('سيناريو 1: دخول الساكن', () => {
     const errors = collectErrors(page);
     const sent = await mockApi(page);
     await page.goto('./');
-    await page.getByLabel('كود الدفع').fill('٤٨٢٧١٩٣٠');
+    await page.getByLabel('كود الدفع').fill('١٢٣٤٥٦٧٠');
     // الكود الكامل بيدخل لوحده من غير ضغط
     await expect(page).toHaveURL(/#r\/home$/);
     await expect(page.getByTestId('balance-due')).toHaveText('350 ج.م');
@@ -60,7 +60,7 @@ test.describe('سيناريو 1: دخول الساكن', () => {
     const login = sent.find((s) => s.body.action === 'r_login')!;
     expect(login.url).toBe(API);
     expect(login.contentType).toBe('text/plain;charset=utf-8');
-    expect(login.body).toEqual({ action: 'r_login', code: '48271930' });
+    expect(login.body).toEqual({ action: 'r_login', code: '12345670' });
 
     const view = sent.find((s) => s.body.action === 'r_view')!;
     expect(view.body).toEqual({ action: 'r_view', token: 'tok-r' });
@@ -72,11 +72,11 @@ test.describe('سيناريو 1: دخول الساكن', () => {
 
   test('بلينك #c= والكود ما يفضلش في اللينك', async ({ page }) => {
     const sent = await mockApi(page);
-    await page.goto('./#c=48271930');
+    await page.goto('./#c=12345670');
     await expect(page).toHaveURL(/#r\/home$/);
     await expect(page.getByTestId('balance-due')).toBeVisible();
-    expect(sent[0].body).toEqual({ action: 'r_login', code: '48271930' });
-    expect(page.url()).not.toContain('48271930');
+    expect(sent[0].body).toEqual({ action: 'r_login', code: '12345670' });
+    expect(page.url()).not.toContain('12345670');
   });
 
   test('لينك #c= بكود غلط بيعرض الغلط زي ما هو من الـ API', async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe('سيناريو 1: دخول الساكن', () => {
 
   test('الجلسة بتتحفظ بعد الـ reload', async ({ page }) => {
     const sent = await mockApi(page);
-    await page.goto('./#c=48271930');
+    await page.goto('./#c=12345670');
     await expect(page.getByTestId('balance-due')).toBeVisible();
     const before = sent.filter((s) => s.body.action === 'r_view').length;
     await page.reload();
@@ -101,7 +101,7 @@ test.describe('سيناريو 1: دخول الساكن', () => {
 
   test('الشريط اللي تحت بيتنقل بين التابات، والخروج بيرجّع للدخول', async ({ page }) => {
     const sent = await mockApi(page);
-    await page.goto('./#c=48271930');
+    await page.goto('./#c=12345670');
     const nav = page.getByRole('navigation', { name: 'القائمة الرئيسية' });
     await expect(nav.getByRole('link')).toHaveCount(5);
     await nav.getByRole('link', { name: 'الدفتر' }).click();
@@ -163,7 +163,7 @@ test.describe('أمين الصندوق', () => {
 
   test('الساكن ما يدخلش تابات أمين الصندوق', async ({ page }) => {
     await mockApi(page);
-    await page.goto('./#c=48271930');
+    await page.goto('./#c=12345670');
     await expect(page).toHaveURL(/#r\/home$/);
     await page.goto('./#a/units');
     await expect(page).toHaveURL(/#r\/home$/);
@@ -172,7 +172,7 @@ test.describe('أمين الصندوق', () => {
 
 test('السيرفر مش بيرد: آخر شاشة محفوظة بتتعرض مع رسالة', async ({ page }) => {
   await mockApi(page);
-  await page.goto('./#c=48271930');
+  await page.goto('./#c=12345670');
   await expect(page.getByTestId('balance-due')).toBeVisible();
   await page.unroute('https://api.nrg-egypt.com/**');
   await page.route('https://api.nrg-egypt.com/**', (r) => r.abort('internetdisconnected'));

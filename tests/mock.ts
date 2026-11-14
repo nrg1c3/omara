@@ -10,7 +10,7 @@ export interface Sent {
 type Handler = (body: Record<string, unknown>) => unknown;
 
 export const DEFAULT_HANDLERS: Record<string, Handler> = {
-  r_login: (b) => (b.code === '48271930' ? { ...RESIDENT_VIEW, token: 'tok-r' } : { ok: false, error: 'الكود ده مش موجود. راجعه تاني.' }),
+  r_login: (b) => (b.code === '12345670' ? { ...RESIDENT_VIEW, token: 'tok-r' } : { ok: false, error: 'الكود ده مش موجود. راجعه تاني.' }),
   r_view: (b) => (b.token === 'tok-r' ? RESIDENT_VIEW : { ok: false, error: 'SESSION' }),
   a_login: (b) => (b.building_id === 'TEST14' && b.pin === '111222' ? { ...ADMIN_VIEW, token: 'tok-a' } : { ok: false, error: 'الرقم السري غلط.' }),
   a_view: (b) => (b.token === 'tok-a' ? ADMIN_VIEW : { ok: false, error: 'SESSION' }),

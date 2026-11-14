@@ -4,7 +4,7 @@ import { useEffect, useState } from 'preact/hooks';
  * توجيه بالـ hash (يشتغل على أي دومين أو GitHub Pages أو Capacitor من غير إعدادات سيرفر).
  *
  *   #login              شاشة الدخول
- *   #c=48271930         دخول الساكن بالكود على طول
+ *   #c=12345670         دخول الساكن بالكود على طول
  *   #guard  #nrg        شاشة الأمن ولوحة NRG (زي النسخة الحالية)
  *   #register           سجّل عمارتك
  *   #r/<tab>            تابات الساكن

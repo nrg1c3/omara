@@ -13,7 +13,7 @@ const READING = { ok: true, receipt_id: 'R100', read_ok: true, amount: 350, date
 test('سيناريو 2: الساكن يرفع إيصال ويأكد المطالبة', async ({ page }) => {
   const errors = collectErrors(page);
   const sent = await mockApi(page, { read_receipt: () => READING, r_claim: () => ({ ok: true }) });
-  await page.goto('./#c=48271930');
+  await page.goto('./#c=12345670');
   await page.getByRole('navigation', { name: 'القائمة الرئيسية' }).getByRole('link', { name: 'الدفع' }).click();
   await expect(page.getByText('إنستاباي: test@instapay')).toBeVisible();
   await page.getByRole('link', { name: 'حوّلت؟ ابعت الإيصال' }).click();
@@ -108,7 +108,7 @@ test('سيناريو 4: مصروف وتصحيح', async ({ page }) => {
 
 test('سيناريو 5: بلاغ من الساكن', async ({ page }) => {
   const sent = await mockApi(page, { r_ticket: () => ({ ok: true }) });
-  await page.goto('./#c=48271930');
+  await page.goto('./#c=12345670');
   await page.getByRole('link', { name: 'بلّغ عن عطل' }).first().click();
   await page.getByRole('button', { name: 'ابعت البلاغ' }).click();
   await expect(page.getByText('اختار نوع العطل.')).toBeVisible();
@@ -141,7 +141,7 @@ test('سيناريو 6: تصريح زائر والتحقق منه من شاشة 
     y_guard_view: () => ({ ok: true, visitors: [{ code: 'K7Q2MZ', name: 'أحمد', unit: '7', date: TODAY, note: '', status: 'ساري' }] }),
     y_guard_check: (b) => (b.code === 'K7Q2MZ' ? { ok: true, valid: true, message: 'أحمد زائر شقة 7. اتسجل دخوله.' } : { ok: true, valid: false, message: 'الكود ده مش موجود.' })
   });
-  await page.goto('./#c=48271930');
+  await page.goto('./#c=12345670');
   await page.getByRole('link', { name: 'تصريح زائر' }).click();
   await page.getByLabel('اسم الزائر').fill('أحمد');
   await page.getByRole('button', { name: 'اعمل التصريح' }).click();
@@ -199,7 +199,7 @@ test('تسجيل عمارة: أدوار × شقق ← نجاح', async ({ page }
 
 test('التصويت: الساكن يصوّت بـ role=r على omara-x', async ({ page }) => {
   const sent = await mockApi(page, { x_vote: () => ({ ok: true }) });
-  await page.goto('./#c=48271930');
+  await page.goto('./#c=12345670');
   await expect(page).toHaveURL(/#r\/home$/);
   await page.goto('./#r/more/polls');
   await page.getByRole('button', { name: 'أيوه' }).click();
@@ -285,7 +285,7 @@ test('المساعد: كود الدفع بيتبعت مع أول رسالة بس
     chats.push(JSON.parse(route.request().postData() ?? '{}'));
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ output: 'عليك 350 جنيه.' }) });
   });
-  await page.goto('./#c=48271930');
+  await page.goto('./#c=12345670');
   await expect(page).toHaveURL(/#r\/home$/);
   await page.goto('./#r/more/chat');
   await page.getByLabel('سؤالك').fill('عليا كام؟');
@@ -294,7 +294,7 @@ test('المساعد: كود الدفع بيتبعت مع أول رسالة بس
   await page.getByLabel('سؤالك').fill('شكراً');
   await page.getByRole('button', { name: 'ابعت' }).click();
   await expect.poll(() => chats.length).toBe(2);
-  expect(chats[0]).toMatchObject({ action: 'sendMessage', chatInput: 'كود الدفع بتاعي 48271930. عليا كام؟' });
+  expect(chats[0]).toMatchObject({ action: 'sendMessage', chatInput: 'كود الدفع بتاعي 12345670. عليا كام؟' });
   expect(chats[1].chatInput).toBe('شكراً');
   expect(chats[0].sessionId).toBe(chats[1].sessionId);
   expect(sent.length).toBeGreaterThan(0);

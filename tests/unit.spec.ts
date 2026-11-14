@@ -8,7 +8,7 @@ import { parseHash, routeToHash } from '../src/router';
 test('الأرقام العربي', () => {
   expect(normalizeDigits('٠١٢٣٤٥٦٧٨٩')).toBe('0123456789');
   expect(normalizeDigits('۰۱۲۳')).toBe('0123');
-  expect(onlyDigits('٤٨ ٢٧-١٩٣٠')).toBe('48271930');
+  expect(onlyDigits('١٢ ٣٤-٥٦٧٠')).toBe('12345670');
   expect(parseAmount('١٬٢٥٠')).toBe(1250);
   expect(parseAmount('1,250.50')).toBe(1250.5);
   expect(parseAmount('١٢٫٥')).toBe(12.5);
@@ -23,7 +23,7 @@ test('التنسيق', () => {
 
 test('التوجيه بالـ hash', () => {
   expect(parseHash('')).toEqual({ name: 'login' });
-  expect(parseHash('#c=48271930')).toEqual({ name: 'code', code: '48271930' });
+  expect(parseHash('#c=12345670')).toEqual({ name: 'code', code: '12345670' });
   expect(parseHash('#guard')).toEqual({ name: 'guard' });
   expect(parseHash('#nrg')).toEqual({ name: 'nrg' });
   expect(parseHash('#r/ledger')).toEqual({ name: 'resident', tab: 'ledger', sub: undefined });
@@ -61,5 +61,5 @@ test('لينكات النسخة القديمة', async () => {
   expect(parseLegacyHash('#guard&t=g1')).toEqual({ role: 'guard', token: 'g1', hash: '#guard' });
   expect(parseLegacyHash('#nrg&t=n1')).toEqual({ role: 'nrg', token: 'n1', hash: '#nrg' });
   expect(parseLegacyHash('#guard')).toBeNull();
-  expect(parseLegacyHash('#c=48271930')).toBeNull();
+  expect(parseLegacyHash('#c=12345670')).toBeNull();
 });

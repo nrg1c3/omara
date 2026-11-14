@@ -4,10 +4,12 @@ import { collectErrors } from './mock';
 /**
  * Smoke على الـ API الحقيقي (TEST14 بس، CLAUDE.md §6). بيقرا بس، وبيعمل logout في الآخر.
  * شغّله: npm run test:smoke
- * الرقم السري لأمين الصندوق التجريبي من متغير البيئة (ما بيتحطش في الريبو):
- *   SMOKE=1 OMARA_TEST_PIN=xxxxxx npm run test:smoke
+ * كود الساكن والرقم السري لأمين الصندوق التجريبيين من متغيرات البيئة (ما بيتحطوش في الريبو العام).
+ * السيرفر بيرفض الطلبات من localhost، فلازم يتشغّل على النسخة المنشورة:
+ *   SMOKE=1 SMOKE_URL=https://nrg1c3.github.io/omara/ OMARA_TEST_CODE=xxxxxxxx OMARA_TEST_PIN=xxxxxx npm run test:smoke
  */
-test.skip(!process.env.SMOKE, 'شغّله بـ SMOKE=1');
+test.skip(!process.env.SMOKE || !process.env.OMARA_TEST_CODE, 'شغّله بـ SMOKE=1 وOMARA_TEST_CODE');
+const CODE = process.env.OMARA_TEST_CODE ?? '';
 
 test('دخول ساكن TEST14 بلينك #c= والخروج', async ({ page }) => {
   const errors = collectErrors(page);
@@ -15,7 +17,7 @@ test('دخول ساكن TEST14 بلينك #c= والخروج', async ({ page }) 
   page.on('request', (r) => {
     if (r.url().startsWith('https://api.nrg-egypt.com/')) bodies.push(JSON.parse(r.postData() ?? '{}'));
   });
-  await page.goto('./#c=48271930');
+  await page.goto(`./#c=${CODE}`);
   await expect(page).toHaveURL(/#r\/home$/, { timeout: 30_000 });
   await expect(page.getByTestId('balance-due')).toBeVisible();
   await page.getByRole('navigation', { name: 'القائمة الرئيسية' }).getByRole('link', { name: 'المزيد' }).click();

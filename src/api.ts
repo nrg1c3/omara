@@ -620,7 +620,7 @@ async function postJSON(url: string, body: unknown, timeoutMs: number): Promise<
 
 /**
  * نداء typed لأي action:
- *   const v = await call('r_login', { code: '48271930' });
+ *   const v = await call('r_login', { code: '12345670' });
  */
 export interface CallOptions {
   /** ما تنادّيش onSessionExpired (مثلاً في الخروج) */

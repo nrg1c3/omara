@@ -19,7 +19,7 @@ export const RESIDENT_VIEW = {
   role: 'resident',
   building,
   unit: { unit: '7', owner_name: 'ساكن تجربة', monthly_fee: 350, phone_on_file: false },
-  pay_code: '48271930',
+  pay_code: '12345670',
   account: {
     balance_due: 350, credit: 0,
     unpaid: [{ month: '2026-11', due: 350, paid: 0, due_date: '2026-11-10', remaining: 350, label: 'نوفمبر 2026' }],
@@ -41,7 +41,7 @@ export const ADMIN_VIEW = {
   late: [{ unit: '18', owner_name: 'ساكن 18', phone: '', amount: 1050, months: 3, months_text: 'سبتمبر، أكتوبر، نوفمبر', text: 'تذكير ودي', wa: '' }],
   units: [
     { id: 1, unit: '3', owner_name: 'ساكن 3', phone: '01001234567', monthly_fee: 350, pay_code: '19386427', balance_due: 700, credit: 0, unpaid: [{ month: '2026-10', label: 'أكتوبر 2026', remaining: 350 }] },
-    { id: 2, unit: '7', owner_name: 'ساكن تجربة', phone: '', monthly_fee: 350, pay_code: '48271930', balance_due: 0, credit: 0, unpaid: [] }
+    { id: 2, unit: '7', owner_name: 'ساكن تجربة', phone: '', monthly_fee: 350, pay_code: '12345670', balance_due: 0, credit: 0, unpaid: [] }
   ],
   group_message: 'كشف حساب عمارة تجربة',
   open_tickets: 1,

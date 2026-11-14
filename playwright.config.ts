@@ -7,7 +7,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: [['list']],
   use: {
-    baseURL: `http://localhost:${PORT}/`,
+    baseURL: process.env.SMOKE_URL || `http://localhost:${PORT}/`,
     locale: 'ar-EG',
     hasTouch: true,
     isMobile: true,

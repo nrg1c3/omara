@@ -8,7 +8,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm run build      # typecheck + build في dist/
 npm test           # Playwright: unit + 375×667 + 390×844 (الـ API متعمله mock)
-npm run test:smoke # اختبار واحد على الـ API الحقيقي بـ TEST14 (بيعمل logout في الآخر)
+SMOKE_URL=https://nrg1c3.github.io/omara/ OMARA_TEST_CODE=... OMARA_TEST_PIN=... npm run test:smoke # على الـ API الحقيقي بـ TEST14 (السيرفر بيرفض localhost)
 npm run icons      # يولّد أيقونات PNG من public/icons/icon.svg
 ```
 
