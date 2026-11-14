@@ -38,8 +38,20 @@ function mark(token: string): string {
   return (h >>> 0).toString(36);
 }
 
+/** لينكات قديمة من غير توكن: بنحوّلها للشكل الجديد عشان الرجوع والمشاركة يبقوا صح */
+export const LEGACY_ALIASES: Record<string, string> = { '#admin': '#login/admin', '#/admin': '#login/admin' };
+
 export function importLegacySession(): void {
   if (typeof location === 'undefined') return;
+  const alias = LEGACY_ALIASES[location.hash];
+  if (alias) {
+    try {
+      history.replaceState(history.state, '', `${location.pathname}${location.search}${alias}`);
+    } catch {
+      /* الراوتر بيفهم #admin برضه */
+    }
+    return;
+  }
   const link = parseLegacyHash(location.hash);
   if (!link) return;
   const used = readJSON<string[]>('legacy.used') ?? [];

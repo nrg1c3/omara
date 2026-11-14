@@ -360,3 +360,10 @@ test('لوحة NRG: دخول بالمفتاح، الإجمالي، العماي�
   await expect.poll(() => sent.some((s) => s.body.action === 'y_logout')).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('لينك قديم #admin بيتحوّل لـ #login/admin', async ({ page }) => {
+  await mockApi(page);
+  await page.goto('./#admin');
+  await expect(page).toHaveURL(/#login\/admin$/);
+  await expect(page.getByLabel('كود العمارة')).toBeVisible();
+});
